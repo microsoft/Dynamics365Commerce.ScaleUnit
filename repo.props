@@ -4,11 +4,13 @@
     <MajorVersion>9.28</MajorVersion>
     <Version>$(MajorVersion).$(BuildNumber)</Version>
   </PropertyGroup>
+
   <PropertyGroup>
     <Publisher Condition="'$(Publisher)' == ''">CN=Contoso Ltd.</Publisher>
     <PublisherDisplayName Condition="'$(PublisherDisplayName)' == ''">Contoso Ltd.</PublisherDisplayName>
   </PropertyGroup>
+
   <PropertyGroup>
-    <CommerceSdkPackagesVersion>9.28.21061.7-preview</CommerceSdkPackagesVersion>
+    <CommerceSdkPackagesVersion>9.28.*</CommerceSdkPackagesVersion>
   </PropertyGroup>
 </Project>
