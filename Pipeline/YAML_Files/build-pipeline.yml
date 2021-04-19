@@ -1,0 +1,40 @@
+pr: none
+trigger: none
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+  - task: PowerShell@2
+    displayName: 'Pre-Build steps'
+    inputs:
+      targetType: filePath
+      filePath: ./Pipeline/PowershellScripts/Pre-Build.ps1
+      failOnStderr: true
+
+  - task: NuGetToolInstaller@1
+    displayName: 'Use NuGet 5.4.0'
+    inputs:
+      versionSpec: '5.4.0'
+
+  - task: NuGetCommand@2
+    displayName: 'NuGet restore'
+    inputs:
+      feedsToUse: config
+      nugetConfigPath: nuget.config
+
+  - task: VSBuild@1
+    displayName: 'Build solution **\*.sln'
+    inputs:
+      solution: '**\*.sln'
+
+  - task: PowerShell@2
+    displayName: 'Copy CloudScaleUnitExtensionPackage package to artifact directory'
+    inputs:
+      targetType: filePath
+      filePath: ./Pipeline/PowershellScripts/CopyFileToDestination.ps1
+      arguments: '-RelativePath "$(Build.SourcesDirectory)\src\ScaleUnitSample" -File "CloudScaleUnitExtensionPackage.zip" -DestinationFullName "$(Build.ArtifactStagingDirectory)\ScaleUnitPackage_$(Build.BuildNumber).zip"'
+      failOnStderr: true
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: drop'
