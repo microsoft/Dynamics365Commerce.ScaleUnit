@@ -1,0 +1,50 @@
+﻿{
+  "$schema": "./devDependencies/schemas/manifestSchema.json",
+  "name": "Contoso.Pos.FullSystemExample.Sample",
+  "publisher": "Contoso",
+  "version": "1.0.0",
+  "minimumPosVersion": "9.29.0.0",
+  "description": "An extension package that makes use of a Retail Server extension. Also works off-line.",
+  "components": {
+    "resources": {
+      "supportedUICultures": [ "en-US" ],
+      "fallbackUICulture": "en-US",
+      "culturesDirectoryPath": "Resources/Strings",
+      "stringResourcesFileName": "resources.resjson"
+    },
+    "extend": {
+      "views": {
+        "SearchView": {
+          "productAppBarCommands": [
+            { "modulePath": "ViewExtensions/Search/NavigateToExampleViewCommand" },
+          ]
+        }
+      }
+    },
+    "create": {
+      "templatedDialogs": [
+        {
+          "htmlPath": "Controls/Dialogs/Create/ExampleCreateDialog.html",
+          "modulePath": "Controls/Dialogs/Create/ExampleCreateDialogModule"
+        },
+        {
+          "htmlPath": "Controls/Dialogs/Edit/ExampleEditDialog.html",
+          "modulePath": "Controls/Dialogs/Edit/ExampleEditDialogModule"
+        },
+        {
+          "htmlPath": "Controls/Dialogs/Display/PingResultDialog.html",
+          "modulePath": "Controls/Dialogs/Display/PingResultDialogModule"
+        }
+      ],
+      "views": [
+        {
+          "title": "Sample Extension View",
+          "pageName": "ExampleView",
+          "phonePageName": "ExampleView",
+          "viewDirectory": "Views/",
+          "viewControllerPath": "Views/ExampleView"
+        }
+      ]
+    }
+  }
+}

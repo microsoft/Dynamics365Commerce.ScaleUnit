@@ -1,3 +1,13 @@
+---
+page_type: sample
+languages:
+  - csharp
+products:
+  - Dynamics 365 Commerce
+name: Extend Headless commerce engine (CRT/RS)
+description: This repo contains the sample code on how to extend the Dynamics 365 Headless Commerce engine - Retail Server, Commerce runtime and Database.
+---
+
 **Download Retail SDK samples and Reference packages from GitHub and NuGet feed:**
 
 This document explains to how to get Retail SDK samples from GitHub and reference package from the public NuGet feed.

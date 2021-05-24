@@ -1,0 +1,3 @@
+{
+  "extends": "./devDependencies/pos-tsconfig-base.json"
+}

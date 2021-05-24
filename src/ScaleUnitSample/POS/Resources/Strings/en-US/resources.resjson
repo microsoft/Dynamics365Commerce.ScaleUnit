@@ -1,0 +1,38 @@
+﻿//======================================================================================================
+//======================================= Store Hour Sample comment. ===================================
+//======================================================================================================
+{
+    //======================== View extension titles. ========================
+    "string_0001"                                      : "EXAMPLE VIEW",
+    "_string_0001.comment"                             : "The Example View's title.",
+
+    //======================== Column names.  ========================
+    "string_1001"                                      : "Int data",
+    "_string_1001.comment"                             : "A column title for the int data on the Example Entity.",
+
+    "string_1002"                                      : "String data",
+    "_string_2.comment"                                : "A column title for the string data on the Example Entity.",
+
+    "string_1003"                                      : "Extension property string data",
+    "_string_3.comment"                                : "A column title for the extension property data on the Example Entity.",
+
+    //======================== Dialog button labels. ========================
+    "string_2001"                                      : "Create",
+    "_string_4.comment"                                : "Create button used on a dialog for making a new entity.", 
+
+    "string_2002"                                      : "Update",
+    "_string_5.comment"                                : "Update button used to commit changes made to an entity in an update dialog.", 
+
+    "string_1006"                                      : "Delete",
+    "_string_6.comment"                                : "Delete button used to delete an entity instance in the list view.",
+
+    "string_2004"                                      : "Cancel",
+    "_string_7.comment"                                : "Cancel button shared across dialogs.",
+
+    "string_2005"                                      : "OK",
+    "_string_8.comment"                                : "OK button used to dismiss a dialog.",
+
+    //======================== Command labels. ========================
+    "string_3001"                                      : "Ping Test",
+    "_string_3001.comment"                             : "A button label used in the app bar, when pressed two unbound endpoints are pinged."
+}
