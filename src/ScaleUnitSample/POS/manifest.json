@@ -16,7 +16,7 @@
       "views": {
         "SearchView": {
           "productAppBarCommands": [
-            { "modulePath": "ViewExtensions/Search/NavigateToExampleViewCommand" },
+            { "modulePath": "ViewExtensions/Search/NavigateToExampleViewCommand" }
           ]
         }
       }

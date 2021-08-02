@@ -1,16 +1,14 @@
 <Project>
   <PropertyGroup>
     <BuildNumber Condition="'$(BuildNumber)' == ''">0.0</BuildNumber>
-    <MajorVersion>9.30</MajorVersion>
+    <MajorVersion>9.31</MajorVersion>
     <Version>$(MajorVersion).$(BuildNumber)</Version>
   </PropertyGroup>
-
   <PropertyGroup>
     <Publisher Condition="'$(Publisher)' == ''">CN=Contoso Ltd.</Publisher>
     <PublisherDisplayName Condition="'$(PublisherDisplayName)' == ''">Contoso Ltd.</PublisherDisplayName>
   </PropertyGroup>
-
   <PropertyGroup>
-    <CommerceSdkPackagesVersion>[9.30.*,9.31)</CommerceSdkPackagesVersion>
+    <CommerceSdkPackagesVersion>[9.31.21214.8-preview,9.32)</CommerceSdkPackagesVersion>
   </PropertyGroup>
 </Project>

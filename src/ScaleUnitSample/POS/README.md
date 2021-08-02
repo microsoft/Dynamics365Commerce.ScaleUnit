@@ -1,0 +1,1 @@
+This project contains samples on how to create POS extensions.
