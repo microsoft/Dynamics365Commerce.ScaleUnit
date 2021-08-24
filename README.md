@@ -115,12 +115,12 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.29.x.x-preview | 10.0.19 PEAP release     |
 | 9.29.x.x         | 10.0.19 Customer preview |
 | 9.29.x.x         | 10.0.19 GA               |
-| 9.20.x.x-preview | 10.0.20 PEAP release     |
-| 9.20.x.x         | 10.0.20 Customer preview |
-| 9.20.x.x         | 10.0.20 GA               |
-| 9.21.x.x-preview | 10.0.21 PEAP release     |
-| 9.21.x.x         | 10.0.21 Customer preview |
-| 9.21.x.x         | 10.0.21 GA               |
+| 9.30.x.x-preview | 10.0.20 PEAP release     |
+| 9.30.x.x         | 10.0.20 Customer preview |
+| 9.30.x.x         | 10.0.20 GA               |
+| 9.31.x.x-preview | 10.0.21 PEAP release     |
+| 9.31.x.x         | 10.0.21 Customer preview |
+| 9.31.x.x         | 10.0.21 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 
