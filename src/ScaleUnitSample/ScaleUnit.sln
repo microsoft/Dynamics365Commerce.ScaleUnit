@@ -11,7 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScaleUnit", "ScaleUnit\Scal
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "POS", "POS\POS.csproj", "{F69DE011-47C5-46FC-A9E0-88A62650B082}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScaleUnit.Installer", "Installer\ScaleUnit.Installer.csproj", "{E937C87D-E159-44F0-AD36-DEAA6D72E678}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScaleUnit.Installer", "Installer\ScaleUnit.Sample.Installer.csproj", "{E937C87D-E159-44F0-AD36-DEAA6D72E678}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "E-CommerceProxyGenerator", "E-CommerceProxyGenerator\E-CommerceProxyGenerator.csproj", "{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{59AA9A4E-084B-4DF4-83D2-151759F6944F} = {59AA9A4E-084B-4DF4-83D2-151759F6944F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +44,10 @@ Global
 		{E937C87D-E159-44F0-AD36-DEAA6D72E678}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E937C87D-E159-44F0-AD36-DEAA6D72E678}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E937C87D-E159-44F0-AD36-DEAA6D72E678}.Release|Any CPU.Build.0 = Release|Any CPU
+		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

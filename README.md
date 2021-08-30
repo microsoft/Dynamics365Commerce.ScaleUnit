@@ -1,11 +1,10 @@
-
 ---
 page_type: sample
 languages:
-- csharp
+  - csharp
 products:
-- dynamics-365 
-- dynamics-commerce
+  - dynamics-365
+  - dynamics-commerce
 name: Extend Headless Commerce APIs.
 description: This repo contains the sample code on how to extend the Dynamics 365 Headless Commerce engine - APIs, Commerce runtime and Database.
 ---
@@ -16,11 +15,11 @@ This readme file explains how to run the Headless Commerce extension samples and
 
 This repo contains code samples, templates, and tools that are required to extend or customize existing Commerce functionality, samples are published into different repos in GitHub based on the Commerce extension components. This topic applies to Dynamics 365 commerce application version 10.0.16 or greater. For earlier version refer this [doc](https://docs.microsoft.com/en-us/dynamics365/commerce/dev-itpro/retail-sdk/retail-sdk-overview).
 
-## Commerce.ScaleUnit repo:
+## Dynamics365Commerce.ScaleUnit repo:
 
 This repo contains the sample code for how to customize the Commerce runtime (CRT), Headless Commerce APIs and channel database.
 
-The samples in the repo are organized by Dynamics 365 Commerce application release, each branch in the repo points to an application release of Dynamics 365 Commerce, use the right release branch based on your go-live version. 
+The samples in the repo are organized by Dynamics 365 Commerce application release, each branch in the repo points to an application release of Dynamics 365 Commerce, use the right release branch based on your go-live version.
 
 Note: The repo contains only samples, so its not required to clone this repo.
 
@@ -32,22 +31,24 @@ Note: The repo contains only samples, so its not required to clone this repo.
 | [Release/9.29](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.29) | 9.29.\* | 10.0.19                     |
 | [Release/9.30](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.30) | 9.30.\* | 10.0.20                     |
 | [Release/9.31](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.31) | 9.31.\* | 10.0.21                     |
-
+| [Release/9.32](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.32) | 9.32.\* | 10.0.22                     |
 
 **Extension repository:**
 
 Extension code or repository if required can download and consume the samples and templates from [microsoft](https://github.com/microsoft)/[Dynamics365Commerce.ScaleUnit](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit), the sample scale unit repo contains nuget.config, repo.props, CustomizationPackage.props and build pipelines script which provide guidance on how extension can setup the repo metadata files.
 
-### Commerce.ScaleUnit repo folders and projects:
+### Dynamics365Commerce.ScaleUnit repo folders and projects:
 
-| Folder           | Project              | Description                                   |
-| ---------------- | ---------------------| --------------------------------------------- |
-| Channel Database | ChannelDatabase.csproj | This project contains samples on how to create Commerce Runtime database extensions.|  
-| CommerceRuntime  | CommerceRuntime.csproj | Controller – Sample code for how to implement new RS APIs.Entities, Messages and RequestHandlers – Sample code for how to implement new CRT service. | 
-| ScaleUnit        | ScaleUnit.csproj       | Sample project oh how to generate the CSU package.                                                                                                        | 
-| POS              | POS.csproj             | Contains samples on how to create POS extensions. |
+| Folder                                                                     | Project                                                                                                           | Description                                                                                                                                          |
+| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [Channel Database](./src/ScaleUnitSample/ChannelDatabase)                  | [ChannelDatabase.csproj](./src/ScaleUnitSample/ChannelDatabase/ChannelDatabase.csproj)                            | This project contains samples on how to create Commerce Runtime database extensions.                                                                 |
+| [CommerceRuntime](./src/ScaleUnitSample/CommerceRuntime)                   | [CommerceRuntime.csproj](./src/ScaleUnitSample/CommerceRuntime/CommerceRuntime.csproj)                            | Controller – Sample code for how to implement new RS APIs.Entities, Messages and RequestHandlers – Sample code for how to implement new CRT service. |
+| [ScaleUnit](./src/ScaleUnitSample/ScaleUnit)                               | [ScaleUnit.csproj](./src/ScaleUnitSample/ScaleUnit/ScaleUnit.csproj)                                              | Sample project on how to generate the CSU                                                                                                            |
+| [ScaleUnit.Installer](./src/ScaleUnitSample/Installer)                     | [ScaleUnit.csproj](./src/ScaleUnitSample/Installer/ScaleUnit.Installer.csproj)                                    | Sample project on how to generate the CSU installer.                                                                                                 |
+| [POS](./src/ScaleUnitSample/POS)                                           | [POS.csproj](./src/ScaleUnitSample/POS/POS.csproj)                                                                | Contains samples on how to create POS extensions.                                                                                                    |
+| [E-CommerceProxyGenerator](./src/ScaleUnitSample/E-CommerceProxyGenerator) | [E-CommerceProxyGenerator.csproj](./src/ScaleUnitSample/E-CommerceProxyGenerator/E-CommerceProxyGenerator.csproj) | Contains a sample on how to generate extension proxies for E-Commerce Application.                                                                   |
 
-Samples for instore components like Modern POS, Cloud POS, Hardware station and Cloud scale unit – Self hosted are published in the [Dynamics365Commerce.InStore]( https://github.com/microsoft/Dynamics365Commerce.InStore) repo.
+Samples for instore components like Modern POS, Cloud POS, Hardware station and Cloud scale unit – Self hosted are published in the [Dynamics365Commerce.InStore](https://github.com/microsoft/Dynamics365Commerce.InStore) repo.
 
 Readme file inside the Commerce Runtime, ChannelDatabase and ScaleUnit contain more details on how to run the samples.
 
@@ -66,38 +67,40 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 
 **Commerce packages available in the public feed:**
 
-| Package name                            | Description |
-| --------------------------------------- | ----------- | 
-| Microsoft.Dynamics.Commerce.Sdk.ChannelDatabase | This package is required to generate the DB packages with CSU.  |
-| Microsoft.Dynamics.Commerce.Sdk.Runtime | This package contains all commerce runtime libraries |
-| Microsoft.Dynamics.Commerce.Sdk.ScaleUnit | This package is required to generate the CSU package for deployment. |
-| Microsoft.Dynamics.Commerce.Sdk.Installers.ScaleUnit|  This package is required to generate the ScaleUnit package for deployment |
-| Microsoft.Dynamics.Commerce.Sdk.HardwareAndPeripherals|  This package contains all commerce Hardware station and peripherals libraries |
-| Microsoft.Dynamics.Commerce.Sdk.Installers| This package contains all the installers libraries |
-| Microsoft.Dynamics.Commerce.Sdk.Installers.HardwareStation| This package is required to generate the Hardware station package for deployment  |
-| Microsoft.Dynamics.Commerce.Sdk.Pos| This package contains all POS libraries |
-| Microsoft.Dynamics.Commerce.Sdk.Installers.ModernPos| This package is required to generate the POS extension installer for deployment |
-| Microsoft.Dynamics.Commerce.Diagnostics| This package contains all the diagnostic libraries |
-| Microsoft.Dynamics.Commerce.Runtime.Data| This package contains all data contract libraries |
-| Microsoft.Dynamics.Commerce.Runtime.DataServices.Messages| This package contains all data services message libraries |
-| Microsoft.Dynamics.Commerce.Runtime.Entities| This package contains all commerce entities definition |
-| Microsoft.Dynamics.Commerce.Runtime.Framework| This package contains all commerce framework libraries |
-| Microsoft.Dynamics.Commerce.Runtime.Hosting.Contracts| This package contains all commerce controller libraries |
-| Microsoft.Dynamics.Commerce.Runtime.Messages| This package contains all commerce runtime messages libraries |
-| Microsoft.Dynamics.Commerce.Runtime.RealtimeServices.Messages| This package contains all the commerce real runtime libraries |
-| Microsoft.Dynamics.Commerce.Runtime.Services.Messages| This package contains all the commerce service messages libraries |
-| Microsoft.Dynamics.Commerce.HardwareStation.Core| This package contains all the HWS libraries |
-| Microsoft.Dynamics.Commerce.HardwareStation.PeripheralRequests| This package contains all the HWS peripherals request libraries |
-| Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Contracts| This package contains all the HWS peripherals contracts libraries |
-| Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities| This package contains all the HWS peripherals entities libraries |
-| Microsoft.Dynamics.Commerce.Installers.Framework|  This package contains all the installers framework libraries |
-| Microsoft.Dynamics.Commerce.KeyVault.Contracts| This package contains all the key vault contract libraries |
-| Microsoft.Dynamics.Commerce.PaymentSDK.Extensions.Portable| This package contains all the payment extension libraries |
-| Microsoft.Dynamics.Commerce.PaymentSDK.Portable| This package contains all the payment libraries  |
-| Microsoft.Dynamics.Commerce.Runtime.FIF.Connector.Messages| This package contains all the FIF connector libraries  |
-| Microsoft.Dynamics.Commerce.Runtime.FIF.DocumentProvider.Messages|  This package contains all the FIF document provider libraries   |
-| Microsoft.Dynamics.Commerce.Installers.Framework.DatabaseExtensions| This package contains all the database installer framework libraries |
-| Microsoft.Dynamics.Commerce.Tools.DbUtilities| This package contains all the DB utilities libraries |
+| Package name                                                          | Description                                                                                                                                                   |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Microsoft.Dynamics.Commerce.Sdk.ChannelDatabase                       | This package is required to generate the DB packages with CSU.                                                                                                |
+| Microsoft.Dynamics.Commerce.Sdk.Runtime                               | This package contains all commerce runtime libraries                                                                                                          |
+| Microsoft.Dynamics.Commerce.Sdk.ScaleUnit                             | This package is required to generate the CSU package for deployment.                                                                                          |
+| Microsoft.Dynamics.Commerce.Sdk.Installers.ScaleUnit                  | This package is required to generate the ScaleUnit package for deployment                                                                                     |
+| Microsoft.Dynamics.Commerce.Sdk.HardwareAndPeripherals                | This package contains all commerce Hardware station and peripherals libraries                                                                                 |
+| Microsoft.Dynamics.Commerce.Sdk.Installers                            | This package contains all the installers libraries                                                                                                            |
+| Microsoft.Dynamics.Commerce.Sdk.Installers.HardwareStation            | This package is required to generate the Hardware station package for deployment                                                                              |
+| Microsoft.Dynamics.Commerce.Sdk.Pos                                   | This package contains all POS libraries                                                                                                                       |
+| Microsoft.Dynamics.Commerce.Sdk.Installers.ModernPos                  | This package is required to generate the POS extension installer for deployment                                                                               |
+| Microsoft.Dynamics.Commerce.Diagnostics                               | This package contains all the diagnostic libraries                                                                                                            |
+| Microsoft.Dynamics.Commerce.Runtime.Data                              | This package contains all data contract libraries                                                                                                             |
+| Microsoft.Dynamics.Commerce.Runtime.DataServices.Messages             | This package contains all data services message libraries                                                                                                     |
+| Microsoft.Dynamics.Commerce.Runtime.Entities                          | This package contains all commerce entities definition                                                                                                        |
+| Microsoft.Dynamics.Commerce.Runtime.Framework                         | This package contains all commerce framework libraries                                                                                                        |
+| Microsoft.Dynamics.Commerce.Runtime.Hosting.Contracts                 | This package contains all commerce controller libraries                                                                                                       |
+| Microsoft.Dynamics.Commerce.Runtime.Messages                          | This package contains all commerce runtime messages libraries                                                                                                 |
+| Microsoft.Dynamics.Commerce.Runtime.RealtimeServices.Messages         | This package contains all the commerce real runtime libraries                                                                                                 |
+| Microsoft.Dynamics.Commerce.Runtime.Services.Messages                 | This package contains all the commerce service messages libraries                                                                                             |
+| Microsoft.Dynamics.Commerce.HardwareStation.Core                      | This package contains all the HWS libraries                                                                                                                   |
+| Microsoft.Dynamics.Commerce.HardwareStation.PeripheralRequests        | This package contains all the HWS peripherals request libraries                                                                                               |
+| Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Contracts     | This package contains all the HWS peripherals contracts libraries                                                                                             |
+| Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Entities      | This package contains all the HWS peripherals entities libraries                                                                                              |
+| Microsoft.Dynamics.Commerce.Installers.Framework                      | This package contains all the installers framework libraries                                                                                                  |
+| Microsoft.Dynamics.Commerce.KeyVault.Contracts                        | This package contains all the key vault contract libraries                                                                                                    |
+| Microsoft.Dynamics.Commerce.PaymentSDK.Extensions.Portable            | This package contains all the payment extension libraries                                                                                                     |
+| Microsoft.Dynamics.Commerce.PaymentSDK.Portable                       | This package contains all the payment libraries                                                                                                               |
+| Microsoft.Dynamics.Commerce.Runtime.FIF.Connector.Messages            | This package contains all the FIF connector libraries                                                                                                         |
+| Microsoft.Dynamics.Commerce.Runtime.FIF.DocumentProvider.Messages     | This package contains all the FIF document provider libraries                                                                                                 |
+| Microsoft.Dynamics.Commerce.Installers.Framework.DatabaseExtensions   | This package contains all the database installer framework libraries                                                                                          |
+| Microsoft.Dynamics.Commerce.Tools.DbUtilities                         | This package contains all the DB utilities libraries                                                                                                          |
+| Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore | This package contains all the extensions proxy generator utilities                                                                                            |
+| Microsoft.Dynamics.Commerce.Proxy.ScaleUnit                           | This package contains all the proxies class for extension applications to consume the Headless Commerce APIs in online mode (connected to Headless Commerce). |
 
 **Package versioning:**
 
@@ -121,6 +124,9 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.31.x.x-preview | 10.0.21 PEAP release     |
 | 9.31.x.x         | 10.0.21 Customer preview |
 | 9.31.x.x         | 10.0.21 GA               |
+| 9.32.x.x-preview | 10.0.22 PEAP release     |
+| 9.32.x.x         | 10.0.22 Customer preview |
+| 9.32.x.x         | 10.0.22 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 
@@ -195,4 +201,3 @@ After a new version of the samples released, if required merge your development 
 - git checkout master git merge release/x.x.x
 
 ```
-

@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <Import Project="..\CustomizationPackage.props" />
+
+    <PropertyGroup>
+        <TargetFramework>netstandard2.0</TargetFramework>
+        <CommerceProxyGeneratorApplicationType>TypeScriptModuleExtensions</CommerceProxyGeneratorApplicationType>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" Version="$(CommerceChannelPackagesVersion)" />
+    </ItemGroup>
+
+    <!--Provide the path to the commerce runtime extension dll file.-->
+    <ItemGroup>
+        <RetailServerExtensionAssemblies Include="..\CommerceRuntime\bin\$(Configuration)\netstandard2.0\CommerceRuntime.dll" />
+    </ItemGroup>
+
+    <!--If you wish to copy the generated files to a specific directory once project is built, set DestinationFolder property to the path you wish to have the files copied to.-->
+    <!--You can set DestinationFolder to target your data actions directory from e-commerce app. Eg: DestinationFolder="Msdyn365.Commerce.Online\src\actions\extensions" -->
+    <!--<Target Name="CopyGeneratedContracts" AfterTargets="AfterBuild">
+        <ItemGroup>
+            <GeneratedDataServiceContracts Include="DataService\*.g.ts" />
+        </ItemGroup>
+        <Copy SourceFiles="@(GeneratedDataServiceContracts)" DestinationFolder="Path\To\Destination\Folder" SkipUnchangedFiles="true" />
+    </Target>-->
+</Project>

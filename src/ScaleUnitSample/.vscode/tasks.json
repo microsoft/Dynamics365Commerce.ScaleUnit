@@ -1,0 +1,102 @@
+{
+  "version": "2.0.0",
+  "problemMatcher": [],
+  "options": {
+    "env": {
+      "common_workspaceFolder" : "${workspaceFolder}",
+      // Base product related parameters
+      "baseProduct_Port" : "446",
+      "baseProduct_AsyncClientCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
+      "baseProduct_SslCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
+      "baseProduct_RetailServerCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
+      "baseProduct_AsyncClientAadClientId" : "",
+      "baseProduct_RetailServerAadClientId" : "",
+      "baseProduct_CposAadClientId" : "",
+      "baseProduct_RetailServerAadResourceId" : "",
+      "baseProduct_Config" : "",
+      // Base product deployment type
+      // set it to "false" to install the RetailServer on IIS
+      "baseProduct_UseSelfHost" : "true"
+    }
+  },
+  "tasks": [
+    {
+      "label": "build-extension", // Build the extension solution
+      "command": "msbuild",
+      "args": [
+        "/t:restore,build",
+        "/property:Configuration=Debug",
+        "/property:NuGetInteractive=true"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "dependsOrder": "sequence",
+      "dependsOn" : [
+        "check-msbuild"
+      ]
+    },
+    {
+      "label": "install", // Install the base product and extension
+      "type": "shell",
+      "windows": {
+        "command": [
+          "\"${workspaceRoot}\\Scripts\\Install.ps1\""
+        ]
+      },
+      "dependsOrder": "sequence",
+      "dependsOn" : [
+        "build-extension"
+      ]
+    },
+    {
+      "label": "check-msbuild", // Check the msbuild availability
+      "type": "shell",
+      "windows": {
+        "command": [
+          "\"${workspaceRoot}\\Scripts\\CheckMsBuild.ps1\""
+        ]
+      }
+    },    
+
+    // Clean and uninstall tasks
+    {
+      "label": "uninstall", // Uninstall everything
+      "type": "shell",
+      "dependsOrder": "sequence",
+      "dependsOn" : [
+        "uninstall-extension",
+        "uninstall-base-product",
+        "clean-extension"
+      ]
+    },
+    {
+      "label": "clean-extension", // Clean the extension solution
+      "command": "msbuild",
+      "args": [
+        "/t:clean",
+        "/property:Configuration=Debug"
+      ],
+      "group": "build"
+    },
+    {
+      "label": "uninstall-extension", // Uninstall the extension
+      "type": "shell",
+      "windows": {
+        "command": [
+          "\"${workspaceRoot}\\Scripts\\Uninstall-Extension.ps1\""
+        ]
+      }
+    },
+    {
+      "label": "uninstall-base-product", // Uninstall the base product
+      "type": "shell",
+      "windows": {
+        "command": [
+          "\"${workspaceRoot}\\Scripts\\Uninstall-Base-Product.ps1\""
+        ]
+      }
+    }
+  ]
+}

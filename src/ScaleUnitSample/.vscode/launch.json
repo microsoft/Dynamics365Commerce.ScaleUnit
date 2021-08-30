@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "defaults": {},
+  "configurations": [
+    {
+      "type": "coreclr",
+      "request": "launch",
+      "program": "${env:Programfiles}\\Microsoft Dynamics 365\\10.0\\Commerce Scale Unit\\Microsoft\\RetailServerSelfHosted\\Microsoft.Dynamics.Retail.RetailServerSelfHost.AspNetCore.exe",
+      "name": "Debug with Self-Host",
+      "serverReadyAction": {
+        "pattern": "Now listening on: https?://[\\S:\\[\\]]+:([0-9]+)",
+        "uriFormat": "http://localhost:%s/healthcheck?testname=ping",
+        "action": "openExternally"
+      },
+      "preLaunchTask": "install"
+    },
+    {
+      "type": "coreclr",
+      "request": "attach",
+      //"processName": "w3wp.exe", // VS Code is not smart enough to let me choose if more than one process is found.
+      "name": "Debug with IIS",
+      "preLaunchTask": "install"
+    }
+  ]
+}
