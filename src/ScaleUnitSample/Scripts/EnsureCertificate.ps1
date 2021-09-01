@@ -15,6 +15,7 @@ param(
     [switch]
     $CheckOnly
 )
+Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
 
 function Get-CertificatesFromStore {
     param(
@@ -62,7 +63,7 @@ function Import-CertificatesIntoStore {
         $store.Close()
         Write-Verbose "Certificate $($Certificate.SubjectName) installed"
     } catch {
-        Write-Warning "Failed to install certificate $($Certificate.SubjectName). Are you running this command as Administrator?"
+        Write-CustomError "Failed to install certificate $($Certificate.SubjectName). Are you running this command as Administrator?"
         throw
     } finally {
         if ($store) {

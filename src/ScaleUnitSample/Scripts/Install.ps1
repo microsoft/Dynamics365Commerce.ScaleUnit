@@ -2,13 +2,15 @@
 .SYNOPSIS
 Installs the Commerce Scale Unit and extension.
 #>
+Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
+
 $workspaceFolder = $Env:common_workspaceFolder
 
 $baseProductInstallRoot = "${Env:Programfiles}\Microsoft Dynamics 365\10.0\Commerce Scale Unit"
 $extensionInstallPath = Join-Path $baseProductInstallRoot "Extensions\ScaleUnit.Sample.Installer"
 
 if (-not (Test-Path -Path "$workspaceFolder\Download\CommerceStoreScaleUnitSetup.exe")) {
-    Write-Warning "The base product installer was not found in `"$workspaceFolder\Download\`" directory. The base installer should be downloaded from the section 'Retail Self-service package' found at https://lcs.dynamics.com/V2/SharedAssetLibrary. Locate there the file whose name includes 'Commerce Scale Unit (PREVIEW)'."
+    Write-CustomError "The base product installer 'CommerceStoreScaleUnitSetup.exe' was not found in `"$workspaceFolder\Download\`" directory. The base installer should be downloaded from the section 'Retail Self-service package' found at https://lcs.dynamics.com/V2/SharedAssetLibrary. Locate there the file whose name includes 'Commerce Scale Unit (PREVIEW)'."
     Write-Host
     exit 1
 }
@@ -33,7 +35,8 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
         }
     }
 
-    if (-not $Env:baseProduct_RetailServerCertFullPath -or $Env:baseProduct_RetailServerCertFullPath -eq "store:///My/LocalMachine?FindByThumbprint=")
+    $CertPrefix = "store:///My/LocalMachine?FindByThumbprint="
+    if (-not $Env:baseProduct_RetailServerCertFullPath -or $Env:baseProduct_RetailServerCertFullPath -eq $CertPrefix)
     {
         Write-Host "Retail Server certificate was not provided"
         # If the RS certificate was not configured for the Self-Host flavor, just provide the self-signed one
@@ -41,7 +44,7 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
         {
                 Write-Host "Ensuring the certificate for Self-Hosted Retail Server"
                 $RetailServerCertThumbprint = & "$workspaceFolder\Scripts\EnsureCertificate.ps1"
-                $Env:baseProduct_RetailServerCertFullPath = "store:///My/LocalMachine?FindByThumbprint=$RetailServerCertThumbprint"
+                $Env:baseProduct_RetailServerCertFullPath = $CertPrefix + $RetailServerCertThumbprint
         }
     }
 
@@ -50,8 +53,8 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
     $installerArgs = ,"install" # This is an array
     # Add each option as a two-element array of name and value. No need to quote the values here.
     if ($Env:baseProduct_Port) { $installerArgs += $("--Port", $Env:baseProduct_Port) }
-    if ($Env:baseProduct_AsyncClientCertFullPath) { $installerArgs += $("--AsyncClientCertFullPath", $Env:baseProduct_AsyncClientCertFullPath) }
-    if ($Env:baseProduct_SslCertFullPath) { $installerArgs += $("--SslCertFullPath", $Env:baseProduct_SslCertFullPath) }
+    if ($Env:baseProduct_AsyncClientCertFullPath -and $Env:baseProduct_AsyncClientCertFullPath -ne $CertPrefix) { $installerArgs += $("--AsyncClientCertFullPath", $Env:baseProduct_AsyncClientCertFullPath) }
+    if ($Env:baseProduct_SslCertFullPath -and $Env:baseProduct_SslCertFullPath -ne $CertPrefix) { $installerArgs += $("--SslCertFullPath", $Env:baseProduct_SslCertFullPath) }
     if ($Env:baseProduct_RetailServerCertFullPath) { $installerArgs += $("--RetailServerCertFullPath", $Env:baseProduct_RetailServerCertFullPath) }
     if ($Env:baseProduct_AsyncClientAadClientId) { $installerArgs += $("--AsyncClientAadClientId", $Env:baseProduct_AsyncClientAadClientId) }
     if ($Env:baseProduct_RetailServerAadClientId) { $installerArgs += $("--RetailServerAadClientId", $Env:baseProduct_RetailServerAadClientId) }
@@ -73,6 +76,7 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
     # https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-encryption-without-validation?view=sql-server-ver15
     $installerArgs += "--TrustSqlServerCertificate"
     $installerArgs += $("-v", "Trace")
+    if ($Env:baseProduct_SqlServerName) { $installerArgs += $("--SqlServerName", $Env:baseProduct_SqlServerName) }
     if ($Config) { $installerArgs += $("--Config", $Config) }
     if ($Env:baseProduct_UseSelfHost -eq "true") { $installerArgs += $("--UseSelfHost", "--SkipSelfHostProcessStart") }
 
@@ -84,7 +88,7 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
 
     if ($LastExitCode -ne 0) {
         Write-Host
-        Write-Warning "The base product installation has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
+        Write-CustomError "The base product installation has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
         Write-Host
         exit $LastExitCode
     }
@@ -103,7 +107,7 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
         if (-not $PackageItem)
         {
             Write-Host
-            Write-Warning "Unable to download channel demo data package. Please examine the above logs to fix a problem and start again."
+            Write-CustomError "Unable to download channel demo data package. Please examine the above logs to fix a problem and start again."
             Write-Host
             exit 1
         }
@@ -111,9 +115,11 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
     }
     else
     {
+        $NugetErrorMessage = "Nuget command-line utility (nuget.exe) is not found on system."
+        $NugetErrorMessage += "`r`n" + "Please install from https://www.nuget.org/packages/NuGet.CommandLine it and ensure it is included in the PATH variable."
+        
         Write-Host
-        Write-Warning "Nuget command-line utility (nuget.exe) is not found on system."
-        Write-Warning "Please install from https://www.nuget.org/packages/NuGet.CommandLine it and ensure it is included in the PATH variable."
+        Write-CustomError $NugetErrorMessage
         Write-Host
         exit 1
     }
@@ -130,7 +136,7 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
 
         if ($LastExitCode -ne 0) {
             Write-Host
-            Write-Warning "The channel data deployment has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
+            Write-CustomError "The channel data deployment has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
             Write-Host
             exit $LastExitCode
         }
@@ -142,7 +148,7 @@ else {
         $ExistingCertThumbprint = & "$workspaceFolder\Scripts\EnsureCertificate.ps1" -CheckOnly
         if ($null -eq $ExistingCertThumbprint) {
             Write-Host
-            Write-Warning "Sample certificate 'Dynamics 365 Self-Hosted Sample Retail Server' has not been found which could take place if the certificate was manually removed. Run the task 'uninstall' to reset the state of the deployment so the certificate is automatically created next time."
+            Write-CustomError "Sample certificate 'Dynamics 365 Self-Hosted Sample Retail Server' has not been found which could take place if the certificate was manually removed. Run the task 'uninstall' to reset the state of the deployment so the certificate is automatically created next time."
             Write-Host
             exit 1
         }
@@ -158,7 +164,7 @@ Write-Host "Installing the extension."
 
 if ($LastExitCode -ne 0) {
     Write-Host
-    Write-Warning "The extension installation has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
+    Write-CustomError "The extension installation has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
     Write-Host
     exit $LastExitCode
 }

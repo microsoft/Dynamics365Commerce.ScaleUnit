@@ -2,6 +2,8 @@
 .SYNOPSIS
 Uninstalls the Commerce Scale Unit Sample Extension.
 #>
+Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
+
 $workspaceFolder = $Env:common_workspaceFolder
 
 Write-Host
@@ -25,7 +27,7 @@ if (Test-Path -Path $InstallerPath) {
             $message += "`r`n" + "If the debugger is attached to Scale Unit make sure to stop debugging session and then try uninstalling again."
         }
         Write-Host
-        Write-Warning $message
+        Write-CustomError $message
         Write-Host
         exit $LastExitCode
     }
