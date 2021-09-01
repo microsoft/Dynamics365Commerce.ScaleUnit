@@ -97,6 +97,7 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
         $ChannelDataPath = Join-Path "$workspaceFolder" "Download\ChannelData"
         $nugetArgs = $("install", $ChannelDataPackageName)
         $nugetArgs += $("-OutputDirectory", $ChannelDataPath)
+        $nugetArgs += $("-PreRelease")
         & "nuget.exe" $nugetArgs
         $PackageItem = Get-ChildItem "$ChannelDataPath\$ChannelDataPackageName.*" -ErrorAction SilentlyContinue | Sort-Object -Descending -Property Name | Select-Object -First 1
         if (-not $PackageItem)
