@@ -144,6 +144,33 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
 }
 else {
     Write-Host "The base product is already installed and has the registry key at '$baseProductRegistryPath'."
+
+    # Check if the installed flavor matches the current project settings
+    $flavorKey = "UseSelfHost"
+    $flavorRegistryValue = $null
+    if ((Get-Item $baseProductRegistryPath).Property -contains $flavorKey) {
+        $flavorRegistryValue = (Get-ItemProperty -Path $baseProductRegistryPath -Name "$flavorKey")."$flavorKey"
+    }
+    else {
+        Write-Warning "The base product flavor configuration key '$flavorKey' is missing at '$baseProductRegistryPath'."
+    }
+
+    # The flavor value may be "true", "false", or null (for the outdated product versions).
+    $installedFlavorIsSelfHost = $flavorRegistryValue -eq "true"
+
+    # The project settings value may be anything, but only the "true" is recognized as a command to install the SelfHost flavor.
+    $targetFlavorIsSelfHost = $Env:baseProduct_UseSelfHost -eq "true"
+
+    if (-not ($installedFlavorIsSelfHost -eq $targetFlavorIsSelfHost)) {
+        $FlavorErrorMessage = "The current installation flavor (UseSelfHost is '$flavorRegistryValue') does not match the one set in the project (baseProduct_UseSelfHost is '$Env:baseProduct_UseSelfHost')."
+        $FlavorErrorMessage += "`r`n" + "Prior retrying, please uninstall the extension and the base product by using the VSCode task 'uninstall' (Terminal/Run Task/uninstall)."
+
+        Write-Host
+        Write-CustomError $FlavorErrorMessage
+        Write-Host
+        exit 1
+    }
+
     if ($Env:baseProduct_UseSelfHost -eq "true") {
         $ExistingCertThumbprint = & "$workspaceFolder\Scripts\EnsureCertificate.ps1" -CheckOnly
         if ($null -eq $ExistingCertThumbprint) {
@@ -177,12 +204,6 @@ if ($Env:baseProduct_UseSelfHost -ne "true") {
     # IIS deployment requires the additional actions to start debugging
 
     $RetailServerRoot = "https://$($MachineName):$($Env:baseProduct_Port)/RetailServer"
-
-    # Warm-up the RetailServer, this is a workaround for the broken RS installation
-    $RetailServerUri = [Uri]"$RetailServerRoot/healthcheck?testname=ping&resultformat=json"
-    Write-Host
-    Write-Host "Quering the Retail Server at $RetailServerUri"
-    Invoke-WebRequest -Uri $RetailServerUri
 
     # Open a default browser with a healthcheck page
     $RetailServerHealthCheckUri = "$RetailServerRoot/healthcheck?testname=ping"
