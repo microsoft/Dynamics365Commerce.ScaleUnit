@@ -9,10 +9,10 @@
     <PublisherDisplayName Condition="'$(PublisherDisplayName)' == ''">Contoso Ltd.</PublisherDisplayName>
   </PropertyGroup>
   <PropertyGroup>
-    <CommerceSdkPackagesVersion>[9.31.21253.6-preview,9.32)</CommerceSdkPackagesVersion>
+    <CommerceSdkPackagesVersion>[9.31.21254.6-preview,9.32)</CommerceSdkPackagesVersion>
     <CommercePosPackagesVersion>[9.31.*,9.32)</CommercePosPackagesVersion>
-    <CommerceChannelPackagesVersion>[9.31.21249.2-preview,9.32)</CommerceChannelPackagesVersion>
-    <CommerceHwsPackagesVersion>[9.31.21249.6-preview,9.32)</CommerceHwsPackagesVersion>
+    <CommerceChannelPackagesVersion>[9.31.21253.12-preview,9.32)</CommerceChannelPackagesVersion>
+    <CommerceHwsPackagesVersion>[9.31.21253.9-preview,9.32)</CommerceHwsPackagesVersion>
     <CommerceToolsPackagesVersion>[10.21.21235.4-preview,10.22)</CommerceToolsPackagesVersion>
     <CommercePaymentsPackagesVersion>[10.20.21177.2-preview,10.21)</CommercePaymentsPackagesVersion>
     <CommerceFrameworkPackagesVersion>[10.4.21246.1-preview,10.5)</CommerceFrameworkPackagesVersion>
