@@ -18,6 +18,17 @@ if (-not (Test-Path -Path "$workspaceFolder\Download\CommerceStoreScaleUnitSetup
 # Determine the machine name. It will be used to query the installed Retail Server.
 $MachineName = [System.Net.Dns]::GetHostEntry("").HostName
 
+# Check if the Retail Server certificate was provided
+$CertPrefix = "store:///My/LocalMachine?FindByThumbprint="
+$RetailServerCertificateProvided = $false
+if ($Env:baseProduct_RetailServerCertFullPath -and $Env:baseProduct_RetailServerCertFullPath -ne $CertPrefix) {
+    $RetailServerCertificateProvided = $true
+    Write-Host "Retail Server certificate was provided: '$Env:baseProduct_RetailServerCertFullPath'"
+}
+else {
+    Write-Host "Retail Server certificate was not provided"
+}
+
 Write-Host
 $baseProductRegistryPath = 'HKLM:\SOFTWARE\Microsoft\Dynamics\Commerce\10.0\Commerce Scale Unit\Configuration'
 if (-not (Test-Path -Path $baseProductRegistryPath)) {
@@ -35,10 +46,8 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
         }
     }
 
-    $CertPrefix = "store:///My/LocalMachine?FindByThumbprint="
-    if (-not $Env:baseProduct_RetailServerCertFullPath -or $Env:baseProduct_RetailServerCertFullPath -eq $CertPrefix)
+    if (-not $RetailServerCertificateProvided)
     {
-        Write-Host "Retail Server certificate was not provided"
         # If the RS certificate was not configured for the Self-Host flavor, just provide the self-signed one
         if ($Env:baseProduct_UseSelfHost -eq "true")
         {
@@ -171,11 +180,13 @@ else {
         exit 1
     }
 
-    if ($Env:baseProduct_UseSelfHost -eq "true") {
+    # An additional check for the automatically created Retail Server certificate.
+    # Only performed for Self-Host flavor if the certificate was not provided by a user.
+    if (-not $RetailServerCertificateProvided -and $Env:baseProduct_UseSelfHost -eq "true") {
         $ExistingCertThumbprint = & "$workspaceFolder\Scripts\EnsureCertificate.ps1" -CheckOnly
         if ($null -eq $ExistingCertThumbprint) {
             Write-Host
-            Write-CustomError "Sample certificate 'Dynamics 365 Self-Hosted Sample Retail Server' has not been found which could take place if the certificate was manually removed. Run the task 'uninstall' to reset the state of the deployment so the certificate is automatically created next time."
+            Write-CustomError "Sample certificate 'Dynamics 365 Self-Hosted Sample Retail Server' has not been found which could take place if the certificate was manually removed or never created. Run the task 'uninstall' to reset the state of the deployment so the certificate is automatically created next time."
             Write-Host
             exit 1
         }
