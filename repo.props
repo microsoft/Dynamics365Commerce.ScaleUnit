@@ -15,6 +15,6 @@
     <CommerceHwsPackagesVersion>[9.32.21259.1-preview,9.33)</CommerceHwsPackagesVersion>
     <CommerceToolsPackagesVersion>[10.22.21257.2-preview,10.23)</CommerceToolsPackagesVersion>
     <CommercePaymentsPackagesVersion>[10.32.21219.2-preview,10.33)</CommercePaymentsPackagesVersion>
-    <CommerceFrameworkPackagesVersion>[10.4.21258.1-preview,10.5)</CommerceFrameworkPackagesVersion>
+    <CommerceFrameworkPackagesVersion>[10.4.21258.1,10.5)</CommerceFrameworkPackagesVersion>
   </PropertyGroup>
 </Project>

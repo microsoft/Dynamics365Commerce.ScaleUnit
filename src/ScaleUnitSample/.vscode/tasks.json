@@ -4,7 +4,7 @@
   "options": {
     "env": {
       "common_workspaceFolder" : "${workspaceFolder}",
-      // Base product related parameters
+      // Base product related parameters. No need to setup any Certificate/AAD/HqConfigurationFile related parameters for Self-Host mode.
       "baseProduct_Port" : "446",
       "baseProduct_AsyncClientCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
       "baseProduct_SslCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
