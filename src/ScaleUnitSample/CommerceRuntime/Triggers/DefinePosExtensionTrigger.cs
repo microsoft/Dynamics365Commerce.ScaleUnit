@@ -43,7 +43,7 @@ namespace Contoso.CommerceRuntime.Triggers
 
             var getExtensionsResponse = (GetExtensionPackageDefinitionsResponse)response;
             var extensionPackageDefinition = new ExtensionPackageDefinition();
-            extensionPackageDefinition.Name = "POS";
+            extensionPackageDefinition.Name = "Contoso.Commerce";
             extensionPackageDefinition.Publisher = "Contoso";
             extensionPackageDefinition.IsEnabled = true;
 
