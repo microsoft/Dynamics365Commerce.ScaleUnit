@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <BuildNumber Condition="'$(BuildNumber)' == ''">0.0</BuildNumber>
-    <MajorVersion>9.32</MajorVersion>
+    <MajorVersion>9.33</MajorVersion>
     <Version>$(MajorVersion).$(BuildNumber)</Version>
   </PropertyGroup>
   <PropertyGroup>
@@ -9,12 +9,12 @@
     <PublisherDisplayName Condition="'$(PublisherDisplayName)' == ''">Contoso Ltd.</PublisherDisplayName>
   </PropertyGroup>
   <PropertyGroup>
-    <CommerceSdkPackagesVersion>[9.32.21283.5-preview,9.33)</CommerceSdkPackagesVersion>
-    <CommercePosPackagesVersion>[9.32.*,9.33)</CommercePosPackagesVersion>
-    <CommerceChannelPackagesVersion>[9.32.21271.2-preview,9.33)</CommerceChannelPackagesVersion>
-    <CommerceHwsPackagesVersion>[9.32.21272.5-preview,9.33)</CommerceHwsPackagesVersion>
+    <CommerceSdkPackagesVersion>[9.33.21283.7-preview,9.34)</CommerceSdkPackagesVersion>
+    <CommercePosPackagesVersion>[9.33.*,9.34)</CommercePosPackagesVersion>
+    <CommerceChannelPackagesVersion>[9.33.21281.8-preview,9.34)</CommerceChannelPackagesVersion>
+    <CommerceHwsPackagesVersion>[9.33.21281.10-preview,9.34)</CommerceHwsPackagesVersion>
     <CommerceToolsPackagesVersion>[10.22.21267.1-preview,10.23)</CommerceToolsPackagesVersion>
-    <CommercePaymentsPackagesVersion>[10.32.21219.2-preview,10.33)</CommercePaymentsPackagesVersion>
+    <CommercePaymentsPackagesVersion>[10.33.21261.2-preview,10.34)</CommercePaymentsPackagesVersion>
     <CommerceFrameworkPackagesVersion>[10.4.21281.1,10.5)</CommerceFrameworkPackagesVersion>
   </PropertyGroup>
 </Project>

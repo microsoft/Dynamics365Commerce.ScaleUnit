@@ -1,0 +1,25 @@
+Msbuild version "<MsbuildVersionString>" is below the minimum supported version "15".
+
+The list of Msbuild versions already installed and found in current PATH variable is:
+<FoundVersions>
+
+Please ensure the latest Msbuild is listed in the PATH environment variable:
+1. If you don't have a VisualStudio installed you may download the "Build Tools for Visual Studio"
+   from https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=BuildTools&rel=15
+   Choose the ".NET desktop build tools" and proceed with installation.
+2. To find the location of msbuild.exe execute the command 'where.exe msbuild' in the Command Prompt.
+3. To modify the PATH variable value, open Windows Settings.
+4. Open "System" setting option.
+5. Select "About" from the menu on the left.
+6. At the bottom, select "System info"
+7. Select "Advanced system settings"
+8. On the new "System Properties" dialog (or in an "Advanced" Tab), click on "Environment Variables"
+9. From "System variables" select the variable "Path" and click "Edit..." (the bottom one of the two).
+10. Click "New"
+11. Paste the path for Msbuild 15.x or greater. It could be (depends on your drives) similar to
+    if Visual Studio is installed:
+    "C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin"
+    or if Build Tools for Visual Studio are installed:
+    "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\Current\Bin"
+12. On the right, click "Move Up" until it reaches the top. Press OK button in the opened windows to apply the changes.
+13. Restart the VSCode for the changes to take effect.

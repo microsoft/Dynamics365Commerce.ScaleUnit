@@ -32,7 +32,7 @@ Note: The repo contains only samples, so its not required to clone this repo.
 | [Release/9.30](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.30) | 9.30.\* | 10.0.20                     |
 | [Release/9.31](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.31) | 9.31.\* | 10.0.21                     |
 | [Release/9.32](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.32) | 9.32.\* | 10.0.22                     |
-
+| [Release/9.33](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.33) | 9.33.\* | 10.0.23                     |
 **Extension repository:**
 
 Extension code or repository if required can download and consume the samples and templates from [microsoft](https://github.com/microsoft)/[Dynamics365Commerce.ScaleUnit](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit), the sample scale unit repo contains nuget.config, repo.props, CustomizationPackage.props and build pipelines script which provide guidance on how extension can setup the repo metadata files.
@@ -51,6 +51,8 @@ Extension code or repository if required can download and consume the samples an
 Samples for instore components like Modern POS, Cloud POS, Hardware station and Cloud scale unit – Self hosted are published in the [Dynamics365Commerce.InStore](https://github.com/microsoft/Dynamics365Commerce.InStore) repo.
 
 Readme file inside the Commerce Runtime, ChannelDatabase and ScaleUnit contain more details on how to run the samples.
+
+If you don't need POS or other samples from the repo, exclude the corresponding projects from the solution.
 
 **Download reference packages for creating Commerce extension APIs and consuming messages, request, entities, and contracts:**
 
@@ -127,6 +129,9 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.32.x.x-preview | 10.0.22 PEAP release     |
 | 9.32.x.x         | 10.0.22 Customer preview |
 | 9.32.x.x         | 10.0.22 GA               |
+| 9.33.x.x-preview | 10.0.23 PEAP release     |
+| 9.33.x.x         | 10.0.23 Customer preview |
+| 9.33.x.x         | 10.0.23 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 

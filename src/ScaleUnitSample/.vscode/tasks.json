@@ -34,7 +34,8 @@
       },
       "dependsOrder": "sequence",
       "dependsOn" : [
-        "check-msbuild"
+        "check-msbuild",
+        "check-ps-bitness"
       ]
     },
     {
@@ -58,7 +59,16 @@
           "\"${workspaceRoot}\\Scripts\\CheckMsBuild.ps1\""
         ]
       }
-    },    
+    },
+    {
+      "label": "check-ps-bitness", // Check the PowerShell bitness
+      "type": "shell",
+      "windows": {
+        "command": [
+          "\"${workspaceRoot}\\Scripts\\CheckPSBitness.ps1\""
+        ]
+      }
+    },
 
     // Clean and uninstall tasks
     {
