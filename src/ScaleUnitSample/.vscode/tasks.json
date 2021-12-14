@@ -5,7 +5,7 @@
     "env": {
       "common_workspaceFolder" : "${workspaceFolder}",
       // Base product related parameters. No need to setup any Certificate/AAD/HqConfigurationFile related parameters for Self-Host mode.
-      "baseProduct_Port" : "446",
+      "baseProduct_Port" : "",
       "baseProduct_AsyncClientCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
       "baseProduct_SslCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
       "baseProduct_RetailServerCertFullPath" : "store:///My/LocalMachine?FindByThumbprint=",
@@ -22,9 +22,9 @@
   "tasks": [
     {
       "label": "build-extension", // Build the extension solution
-      "command": "msbuild",
+      "command": "dotnet",
       "args": [
-        "/t:restore,build",
+        "build",
         "/property:Configuration=Debug",
         "/property:NuGetInteractive=true"
       ],
@@ -34,8 +34,9 @@
       },
       "dependsOrder": "sequence",
       "dependsOn" : [
-        "check-msbuild",
-        "check-ps-bitness"
+        "check-dotnet-sdk",
+        "check-ps-bitness",
+        "ensure-nuget-auth"
       ]
     },
     {
@@ -52,11 +53,11 @@
       ]
     },
     {
-      "label": "check-msbuild", // Check the msbuild availability
+      "label": "check-dotnet-sdk", // Check the dotnet-sdk availability
       "type": "shell",
       "windows": {
         "command": [
-          "\"${workspaceRoot}\\Scripts\\CheckMsBuild.ps1\""
+          "\"${workspaceRoot}\\Scripts\\CheckDotnetSdk.ps1\""
         ]
       }
     },
@@ -66,6 +67,15 @@
       "windows": {
         "command": [
           "\"${workspaceRoot}\\Scripts\\CheckPSBitness.ps1\""
+        ]
+      }
+    },
+    {
+      "label": "ensure-nuget-auth", // Ensure that nuget authentication is working
+      "type": "shell",
+      "windows": {
+        "command": [
+          "\"${workspaceRoot}\\Scripts\\EnsureNugetAuth.ps1\""
         ]
       }
     },
@@ -83,9 +93,9 @@
     },
     {
       "label": "clean-extension", // Clean the extension solution
-      "command": "msbuild",
+      "command": "dotnet",
       "args": [
-        "/t:clean",
+        "clean",
         "/property:Configuration=Debug"
       ],
       "group": "build"

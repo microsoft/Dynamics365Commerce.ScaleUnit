@@ -22,4 +22,4 @@ Please ensure the latest Msbuild is listed in the PATH environment variable:
     or if Build Tools for Visual Studio are installed:
     "C:\Program Files (x86)\Microsoft Visual Studio\2017\BuildTools\MSBuild\Current\Bin"
 12. On the right, click "Move Up" until it reaches the top. Press OK button in the opened windows to apply the changes.
-13. Restart the VSCode for the changes to take effect.
+13. Restart the VS Code for the changes to take effect.

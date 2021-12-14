@@ -5,6 +5,7 @@ Installs the Commerce Scale Unit and extension.
 Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
 
 $workspaceFolder = $Env:common_workspaceFolder
+$NewLine = [Environment]::NewLine
 
 $baseProductInstallRoot = "${Env:Programfiles}\Microsoft Dynamics 365\10.0\Commerce Scale Unit"
 $extensionInstallPath = Join-Path $baseProductInstallRoot "Extensions\ScaleUnit.Sample.Installer"
@@ -14,6 +15,16 @@ if (-not (Test-Path -Path "$workspaceFolder\Download\CommerceStoreScaleUnitSetup
     Write-Host
     exit 1
 }
+
+if ($Env:baseProduct_UseSelfHost -eq "true")
+{
+    $selfHostBanner = Get-Content (Join-Path "Scripts" "Banner.txt") -Raw
+    Write-Host $selfHostBanner | Out-String
+    # Give the user a chance to see the banner (500ms should be enough).
+    [System.Threading.Thread]::Sleep(500)
+}
+
+Write-Host
 
 # Determine the machine name. It will be used to query the installed Retail Server.
 $MachineName = [System.Net.Dns]::GetHostEntry("").HostName
@@ -30,6 +41,7 @@ else {
 }
 
 Write-Host
+$port = $Env:baseProduct_Port
 $baseProductRegistryPath = 'HKLM:\SOFTWARE\Microsoft\Dynamics\Commerce\10.0\Commerce Scale Unit\Configuration'
 if (-not (Test-Path -Path $baseProductRegistryPath)) {
     # The config file path may be passed as absolute or relative
@@ -83,11 +95,37 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
     if ($Env:baseProduct_TenantId) { $installerArgs += $("--TenantId", $Env:baseProduct_TenantId) }
     # Don't use this flag in production scenarios without realizing all security risks
     # https://docs.microsoft.com/en-us/sql/relational-databases/native-client/features/using-encryption-without-validation?view=sql-server-ver15
-    $installerArgs += "--TrustSqlServerCertificate"
+    $installerArgs += $("--TrustSqlServerCertificate")
     $installerArgs += $("-v", "Trace")
     if ($Env:baseProduct_SqlServerName) { $installerArgs += $("--SqlServerName", $Env:baseProduct_SqlServerName) }
     if ($Config) { $installerArgs += $("--Config", $Config) }
-    if ($Env:baseProduct_UseSelfHost -eq "true") { $installerArgs += $("--UseSelfHost", "--SkipSelfHostProcessStart") }
+    if ($Env:baseProduct_UseSelfHost -eq "true")
+    {
+        $installerArgs += $("--UseSelfHost")
+        $installerArgs += $("--SkipSelfHostProcessStart")
+    }
+
+    # If the Port parameter was not supplied, choose the first available tcp port and pass it to the base product installer,
+    # this will work for both IIS and Self-Host flavor.
+    if (-not $Env:baseProduct_Port)
+    {
+        # Winsock performs an automatic search for a free TCP port if we pass 0 port number to a socket "bind" function,
+        # in .NET we use the TcpListener to invoke this functionality.
+        # Useful links:
+        # https://docs.microsoft.com/en-us/windows/win32/api/winsock/nf-winsock-bind#remarks
+        # https://referencesource.microsoft.com/#system/net/System/Net/Sockets/Socket.cs,950
+        # https://referencesource.microsoft.com/#system/net/System/Net/Sockets/TCPListener.cs,185
+
+        $loopback = [System.Net.IPAddress]::Loopback
+        $listener = New-Object -TypeName System.Net.Sockets.TcpListener $loopback,0
+        $listener.Start()
+        $port = "$($listener.LocalEndpoint.Port)"
+        $listener.Stop()
+
+        Write-Host "The port was not supplied, automatically assigning the port number $port"
+
+        $installerArgs += $("--Port", $port)
+    }
 
     Write-Host
     Write-Host "The base product installation command is:"
@@ -104,34 +142,65 @@ if (-not (Test-Path -Path $baseProductRegistryPath)) {
 
     Write-Host
     Write-Host "Retrieve the channel demo data package."
-    if (Get-Command "nuget.exe" -ErrorAction SilentlyContinue) 
-    {
-        $ChannelDataPackageName = "Microsoft.Dynamics.Commerce.Database.ChannelDemoData"
-        $ChannelDataPath = Join-Path "$workspaceFolder" "Download\ChannelData"
-        $nugetArgs = $("install", $ChannelDataPackageName)
-        $nugetArgs += $("-OutputDirectory", $ChannelDataPath)
-        $nugetArgs += $("-PreRelease")
-        & "nuget.exe" $nugetArgs
-        $PackageItem = Get-ChildItem "$ChannelDataPath\$ChannelDataPackageName.*" -ErrorAction SilentlyContinue | Sort-Object -Descending -Property Name | Select-Object -First 1
-        if (-not $PackageItem)
-        {
-            Write-Host
-            Write-CustomError "Unable to download channel demo data package. Please examine the above logs to fix a problem and start again."
-            Write-Host
-            exit 1
+
+    $ChannelDataPackageName = "Microsoft.Dynamics.Commerce.Database.ChannelDemoData"
+    $ChannelDataPath = Join-Path (Join-Path "$workspaceFolder" "Download") "ChannelData"
+    $LatestPackage = ""
+    $CommandExitCode = 0
+
+    & "$workspaceFolder\Scripts\RestoreChannelDataDotnet.ps1" $ChannelDataPackageName $ChannelDataPath ([ref]$LatestPackage) ([ref]$CommandExitCode)
+    if ($CommandExitCode -ne 0) {
+        # If the restore via "dotnet restore" has failed,
+        # trying the fallback approach: obtain the Channel Data via the nuget.exe
+        $LatestPackageDotnet = $LatestPackage
+
+        $LatestPackageNuget = ""
+ 
+        & "$workspaceFolder\Scripts\RestoreChannelDataNuget.ps1" $ChannelDataPackageName $ChannelDataPath ([ref]$LatestPackageNuget)
+        if (-not $LatestPackageNuget) {
+            # nuget.exe has failed also, no package found
+            Write-Warning "Retrieving the package via 'nuget.exe' command has failed."
         }
-        $DataPath = Join-Path $PackageItem "contentFiles"
+        else
+        {
+            $usePackageRetrievedByDotnet = $false
+            if ($LatestPackageDotnet)
+            {
+                Write-Host "Packages are retrieved by both the 'dotnet' and 'nuget.exe' commands. Versions are '$($LatestPackageDotnet.Version)' and '$($LatestPackageNuget.Version)' correspondingly."
+                # Compare the versions obtained by both commands to return the latest.
+                if ($LatestPackageDotnet.Version -gt $LatestPackageNuget.Version)
+                {
+                    $usePackageRetrievedByDotnet = $true
+                }
+            }
+
+            if ($usePackageRetrievedByDotnet)
+            {
+                $LatestPackage = $LatestPackageDotnet
+                Write-Host "Using the package version '$($LatestPackageDotnet.Version)' retrieved by the 'dotnet' command."
+            }
+            else
+            {
+                $LatestPackage = $LatestPackageNuget
+                Write-Host "Using the package version '$($LatestPackageNuget.Version)' retrieved by the 'nuget.exe' command."
+            }
+        }
     }
-    else
+
+    if (-not $LatestPackage)
     {
-        $NugetErrorMessage = "Nuget command-line utility (nuget.exe) is not found on system."
-        $NugetErrorMessage += "`r`n" + "Please install from https://www.nuget.org/packages/NuGet.CommandLine it and ensure it is included in the PATH variable."
-        
         Write-Host
-        Write-CustomError $NugetErrorMessage
+        Write-CustomError "Unable to download channel demo data package. Please examine the above logs to fix a problem and start again."
         Write-Host
         exit 1
     }
+    else
+    {
+        Write-Host "The '$ChannelDataPackageName' package was found in folder '$($LatestPackage.FullName)'."
+    }
+
+    $LatestPackagePath = $LatestPackage.FullName
+    $DataPath = Join-Path $LatestPackagePath "contentFiles"
 
     if ($Env:baseProduct_UseSelfHost -eq "true") {
         Write-Host
@@ -172,7 +241,7 @@ else {
 
     if (-not ($installedFlavorIsSelfHost -eq $targetFlavorIsSelfHost)) {
         $FlavorErrorMessage = "The current installation flavor (UseSelfHost is '$flavorRegistryValue') does not match the one set in the project (baseProduct_UseSelfHost is '$Env:baseProduct_UseSelfHost')."
-        $FlavorErrorMessage += "`r`n" + "Prior retrying, please uninstall the extension and the base product by using the VSCode task 'uninstall' (Terminal/Run Task/uninstall)."
+        $FlavorErrorMessage += $NewLine + "Prior retrying, please uninstall the extension and the base product by using the VS Code task 'uninstall' (Terminal/Run Task/uninstall)."
 
         Write-Host
         Write-CustomError $FlavorErrorMessage
@@ -194,6 +263,17 @@ else {
             Write-Host "Sample certificate 'Dynamics 365 Self-Hosted Sample Retail Server' has been found with a thumbprint '$ExistingCertThumbprint'."
         }
     }
+
+    # Read the port assigned to the RetailServer site during the last successful installation
+    $portKey = "Port"
+    $portRegistryValue = $null
+    if ((Get-Item $baseProductRegistryPath).Property -contains $portKey) {
+        $portRegistryValue = (Get-ItemProperty -Path $baseProductRegistryPath -Name "$portKey")."$portKey"
+        $port = $portRegistryValue
+    }
+    else {
+        Write-Warning "The base product port configuration key '$portKey' is missing at '$baseProductRegistryPath'. This may indicate that the base product needs to be reinstalled by issuing VS Code task 'install' (Menu 'Run Task...' -> install)."
+    }
 }
 
 Write-Host
@@ -214,9 +294,10 @@ Copy-Item -Path (Join-Path "$workspaceFolder" "\CommerceRuntime\bin\Debug\netsta
 if ($Env:baseProduct_UseSelfHost -ne "true") {
     # IIS deployment requires the additional actions to start debugging
 
-    $RetailServerRoot = "https://$($MachineName):$($Env:baseProduct_Port)/RetailServer"
+    $RetailServerRoot = "https://$($MachineName):$port/RetailServer"
 
     # Open a default browser with a healthcheck page
     $RetailServerHealthCheckUri = "$RetailServerRoot/healthcheck?testname=ping"
+    Write-Host "Open the IIS site at '$RetailServerHealthCheckUri' to start the process to attach debugger to."
     Start-Process -FilePath $RetailServerHealthCheckUri
 }

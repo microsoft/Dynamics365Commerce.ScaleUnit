@@ -23,18 +23,14 @@ If you choose to develop by leveraging fully setup CSU locally with all actual c
 1. Clone https://github.com/microsoft/Dynamics365Commerce.ScaleUnit
 1. Install 64 bit version of VS Code for Windows from https://code.visualstudio.com/download
 1. Install *.Net Core SDK 3.1* for Windows x64 from https://dotnet.microsoft.com/download/dotnet/3.1.
+1. Install *.NET Framework 4.6.1 Developer pack* from https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net461-developer-pack-offline-installer.
 1. Install the *Hosting Bundle* (click literally "Hosting Bundle" link, not "x64" nor "x86") for Windows from the same above referenced link.
-1. Download nuget.exe:
-   - Navigate to https://www.nuget.org/packages/NuGet.CommandLine and click "Download Package"
-   - Change the extension of the downloaded file to *zip* and unzip the folder
-   - Add a line to Environment System Variable *PATH*, pointing to the folder *Tools* in the unzipped folder
 1. Navigate to https://lcs.dynamics.com/V2/SharedAssetLibrary select the section *Retail Self-service package files* and then locate there the file ending with *Commerce Scale Unit (PREVIEW)*. Make sure to select there the version for the release you need, for instance 10.0.22, 10.0.23 and so on. Download the file and place it in the folder [Download](./Download)
 1. Launch the VS Code as Administrator and open src\ScaleUnitSample by leveraging the menu File->Open **Folder**.
 1. Once VS Code is asking to install recommended extensions - proceed installing them, the set includes *"C# for Visual Studio Code (powered by OmniSharp)"* and might include other extensions as well. If you see a message indicating that .NET Core SDK could not be located,  select the suggested option to get the SDK and follow the steps to install it.
 1. In VS Code click Terminal->Run Task...->build-extension:
    - If there is an error indicating running scripts is disabled on this system, then open cmd.exe as Administrator and execute ```powershell Set-ExecutionPolicy RemoteSigned``` then restart VS Code. Do not change the ExecutionPolicy on production machines unless you understand [the implications of changing security policies.](https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_execution_policies).
-   - If there is an error indicating msbuild could not be located, then navigate to https://visualstudio.microsoft.com/downloads/, scroll down to "Tools for Visual Studio", expand it and download/run "Build Tools for Visual Studio", while installing do not specify any components, just hit "Install" button. Once it is installed, open cmd.exe and execute ```where msbuild```, if msbuild will not be found, execute the same command from within "Developer Command Prompt for VS". Once you locate the msbuild.exe make sure that Environment System Variable PATH contains a PATH to the folder (do not include the file name) containing msbuild, at the very top of the list, you can use the button "Move Up" to achieve that. That path should point to the folder with msbuild.exe of at least version 15, to check the version execute ```msbuild /version```. To verify the PATH variable is set correctly, open a new regular cmd.exe (don't use Developer Command Prompt this time) and execute ```msbuild/version```, it should print at least version 15. Once you finished setting up msbuild, restart VS Code.
-   - If there is an error indicating the SDK 'Microsoft.NET.Sdk' specified could not be found, use the previously downloaded "Tools for Visual Studio" to install the SDK by navigating to: "Individual components"->Type **.NET SDK**-> Check the CheckBox **.NET SDK** and hit "Install/Modify".
+   - If there is an error indicating the SDK 'Microsoft.NET.Sdk' specified could not be found, then navigate to https://visualstudio.microsoft.com/downloads/, scroll down to "Tools for Visual Studio", expand it and download/run "Build Tools for Visual Studio". In the installation wizard, go to "Individual components"->Type **.NET SDK**-> Check the CheckBox **.NET SDK** and hit "Install".
    - If there is an error "*The build task could not find node.exe which is required to run the TypeScript compiler. Please install Node and ensure that the system path contains its location.*" install Windows Installer 64 bit [Node.JS](https://nodejs.org/en/download/current/), when prompted set the checkbox "Automatically install the necessary tools".
 
 ## Run-time
@@ -195,7 +191,7 @@ Self-Hosted CSU will also print runtime logs directly to the VS Code Terminal.
 # Out Of the Box Tasks
 A set of tasks is available via VS Code's *Terminal->Run Task...* to achieve various goals:
 - *build-extension* - builds an extension.
-- *check-msbuild* - reveals msbuild's version available for Visual Studio Code.
+- *check-dotnet-sdk* - reveals .NET Core SDK version available for Visual Studio Code.
 - *check-ps-bitness* - checks if PowerShell available for Visual Studio Code is of required 64 bit version.
 - *clean-extension* - cleans build output generated while the extension was built.
 - *install* - verifies all Dev Time prerequisites and then performs all required actions for the selected mode (Self-Hosted vs IIS) to deploy the Scale Unit ready for a debug session. This includes installation of the Base Scale Unit as well as Extension Installer.
