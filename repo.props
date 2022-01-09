@@ -9,7 +9,7 @@
     <PublisherDisplayName Condition="'$(PublisherDisplayName)' == ''">Contoso Ltd.</PublisherDisplayName>
   </PropertyGroup>
   <PropertyGroup>
-    <CommerceSdkPackagesVersion>[9.34.22008.5-preview,9.35)</CommerceSdkPackagesVersion>
+    <CommerceSdkPackagesVersion>[9.34.22009.5-preview,9.35)</CommerceSdkPackagesVersion>
     <CommercePosPackagesVersion>[9.34.*,9.35)</CommercePosPackagesVersion>
     <CommerceChannelPackagesVersion>[9.34.22007.6-preview,9.35)</CommerceChannelPackagesVersion>
     <CommerceHwsPackagesVersion>[9.34.22007.13-preview,9.35)</CommerceHwsPackagesVersion>
