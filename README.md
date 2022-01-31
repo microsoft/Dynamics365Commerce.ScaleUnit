@@ -33,6 +33,9 @@ Note: The repo contains only samples, so its not required to clone this repo.
 | [Release/9.31](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.31) | 9.31.\* | 10.0.21                     |
 | [Release/9.32](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.32) | 9.32.\* | 10.0.22                     |
 | [Release/9.33](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.33) | 9.33.\* | 10.0.23                     |
+| [Release/9.34](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.34) | 9.34.\* | 10.0.24                     |
+| [Release/9.35](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.35) | 9.35.\* | 10.0.25                     |
+
 **Extension repository:**
 
 Extension code or repository if required can download and consume the samples and templates from [microsoft](https://github.com/microsoft)/[Dynamics365Commerce.ScaleUnit](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit), the sample scale unit repo contains nuget.config, repo.props, CustomizationPackage.props and build pipelines script which provide guidance on how extension can setup the repo metadata files.

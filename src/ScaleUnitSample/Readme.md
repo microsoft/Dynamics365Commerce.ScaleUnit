@@ -25,7 +25,7 @@ If you choose to develop by leveraging fully setup CSU locally with all actual c
 1. Install *.Net Core SDK 3.1* for Windows x64 from https://dotnet.microsoft.com/download/dotnet/3.1.
 1. Install *.NET Framework 4.6.1 Developer pack* from https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net461-developer-pack-offline-installer.
 1. Install the *Hosting Bundle* (click literally "Hosting Bundle" link, not "x64" nor "x86") for Windows from the same above referenced link.
-1. Navigate to https://lcs.dynamics.com/V2/SharedAssetLibrary select the section *Retail Self-service package files* and then locate there the file ending with *Commerce Scale Unit (PREVIEW)*. Make sure to select there the version for the release you need, for instance 10.0.22, 10.0.23 and so on. Download the file and place it in the folder [Download](./Download)
+1. Navigate to https://lcs.dynamics.com/V2/SharedAssetLibrary select the section *Retail Self-service package files* and then locate there the file ending with *Commerce Scale Unit (SEALED)*. Make sure to select there the version for the release you need, for instance 10.0.22, 10.0.23 and so on. Download the file and place it in the folder [Download](./Download)
 1. Launch the VS Code as Administrator and open src\ScaleUnitSample by leveraging the menu File->Open **Folder**.
 1. Once VS Code is asking to install recommended extensions - proceed installing them, the set includes *"C# for Visual Studio Code (powered by OmniSharp)"* and might include other extensions as well. If you see a message indicating that .NET Core SDK could not be located,  select the suggested option to get the SDK and follow the steps to install it.
 1. In VS Code click Terminal->Run Task...->build-extension:

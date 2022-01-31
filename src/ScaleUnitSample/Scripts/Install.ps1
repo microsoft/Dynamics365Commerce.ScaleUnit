@@ -11,7 +11,7 @@ $baseProductInstallRoot = "${Env:Programfiles}\Microsoft Dynamics 365\10.0\Comme
 $extensionInstallPath = Join-Path $baseProductInstallRoot "Extensions\ScaleUnit.Sample.Installer"
 
 if (-not (Test-Path -Path "$workspaceFolder\Download\CommerceStoreScaleUnitSetup.exe")) {
-    Write-CustomError "The base product installer 'CommerceStoreScaleUnitSetup.exe' was not found in `"$workspaceFolder\Download\`" directory. The base installer should be downloaded from the section 'Retail Self-service package' found at https://lcs.dynamics.com/V2/SharedAssetLibrary. Locate there the file whose name includes 'Commerce Scale Unit (PREVIEW)'."
+    Write-CustomError "The base product installer 'CommerceStoreScaleUnitSetup.exe' was not found in `"$workspaceFolder\Download\`" directory. Download the 'Commerce Scale Unit (SEALED)' installer from Lifecycle Service (LCS) > Shared 'asset library > Retail Self-service package (https://lcs.dynamics.com/V2/SharedAssetLibrary ) and copy it to the `"$workspaceFolder\Download\`" directory."
     Write-Host
     exit 1
 }
