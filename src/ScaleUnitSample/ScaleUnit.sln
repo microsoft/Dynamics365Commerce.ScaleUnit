@@ -1,8 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.1267
-MinimumVisualStudioVersion = 10.0.40219.1
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32112.339
+MinimumVisualStudioVersion = 16
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChannelDatabase", "ChannelDatabase\ChannelDatabase.csproj", "{A8166D6A-9868-43C8-8732-0D2DD6C9826C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommerceRuntime", "CommerceRuntime\CommerceRuntime.csproj", "{59AA9A4E-084B-4DF4-83D2-151759F6944F}"
