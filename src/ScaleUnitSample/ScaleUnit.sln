@@ -2,7 +2,7 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.32112.339
-MinimumVisualStudioVersion = 16
+MinimumVisualStudioVersion = 16.0.0.0
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChannelDatabase", "ChannelDatabase\ChannelDatabase.csproj", "{A8166D6A-9868-43C8-8732-0D2DD6C9826C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CommerceRuntime", "CommerceRuntime\CommerceRuntime.csproj", "{59AA9A4E-084B-4DF4-83D2-151759F6944F}"
@@ -13,10 +13,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "POS", "POS\POS.csproj", "{F
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScaleUnit.Installer", "Installer\ScaleUnit.Sample.Installer.csproj", "{E937C87D-E159-44F0-AD36-DEAA6D72E678}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "E-CommerceProxyGenerator", "E-CommerceProxyGenerator\E-CommerceProxyGenerator.csproj", "{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}"
-	ProjectSection(ProjectDependencies) = postProject
-		{59AA9A4E-084B-4DF4-83D2-151759F6944F} = {59AA9A4E-084B-4DF4-83D2-151759F6944F}
-	EndProjectSection
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharpProxyGenerator", "CommerceProxyGenerator\CSharp\CSharpProxyGenerator.csproj", "{27BE7504-C928-4154-8724-BED44EC65FB5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeScriptProxyGenerator", "CommerceProxyGenerator\TypeScript\TypeScriptProxyGenerator.csproj", "{8D6CA620-80BE-4518-BB50-75C2DA720379}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,10 +43,14 @@ Global
 		{E937C87D-E159-44F0-AD36-DEAA6D72E678}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E937C87D-E159-44F0-AD36-DEAA6D72E678}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E937C87D-E159-44F0-AD36-DEAA6D72E678}.Release|Any CPU.Build.0 = Release|Any CPU
-		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{083ADD53-E84C-41BF-A75C-0E0E19E92EBE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{27BE7504-C928-4154-8724-BED44EC65FB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{27BE7504-C928-4154-8724-BED44EC65FB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{27BE7504-C928-4154-8724-BED44EC65FB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{27BE7504-C928-4154-8724-BED44EC65FB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

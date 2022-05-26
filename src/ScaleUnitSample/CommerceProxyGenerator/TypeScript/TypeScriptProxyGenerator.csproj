@@ -1,18 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <Import Project="..\CustomizationPackage.props" />
+    <Import Project="..\..\CustomizationPackage.props" />
 
     <PropertyGroup>
         <TargetFramework>netstandard2.0</TargetFramework>
         <CommerceProxyGeneratorApplicationType>TypeScriptModuleExtensions</CommerceProxyGeneratorApplicationType>
+        <AssemblyName>Contoso.Commerce.RetailProxy.Extension</AssemblyName>
+        <RootNamespace>Contoso.Commerce.RetailProxy.Extension</RootNamespace>
+        <DefaultLanguage>en-US</DefaultLanguage>
+        <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     </PropertyGroup>
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" Version="$(CommerceChannelPackagesVersion)" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\..\CommerceRuntime\CommerceRuntime.csproj" />
+    </ItemGroup>
+
     <!--Provide the path to the commerce runtime extension dll file.-->
     <ItemGroup>
-        <RetailServerExtensionAssemblies Include="..\CommerceRuntime\bin\$(Configuration)\netstandard2.0\CommerceRuntime.dll" />
+        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\netstandard2.0\CommerceRuntime.dll" />
     </ItemGroup>
 
     <!--If you wish to copy the generated files to a specific directory once project is built, set DestinationFolder property to the path you wish to have the files copied to.-->

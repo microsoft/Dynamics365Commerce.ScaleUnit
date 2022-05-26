@@ -9,13 +9,13 @@ name: Extend Headless Commerce APIs.
 description: This repo contains the sample code on how to extend the Dynamics 365 Headless Commerce engine - APIs, Commerce runtime and Database.
 ---
 
-# Headless Commerce samples and Reference packages from GitHub and public feed:
+# Headless Commerce samples and Reference packages from GitHub and public feed
 
 This readme file explains how to run the Headless Commerce extension samples and consume the reference package from the public feed for Dynamics 365 Commerce extension development.
 
 This repo contains code samples, templates, and tools that are required to extend or customize existing Commerce functionality, samples are published into different repos in GitHub based on the Commerce extension components. This topic applies to Dynamics 365 commerce application version 10.0.16 or greater. For earlier version refer this [doc](https://docs.microsoft.com/en-us/dynamics365/commerce/dev-itpro/retail-sdk/retail-sdk-overview).
 
-## Dynamics365Commerce.ScaleUnit repo:
+## Dynamics365Commerce.ScaleUnit repo
 
 This repo contains the sample code for how to customize the Commerce runtime (CRT), Headless Commerce APIs and channel database.
 
@@ -25,31 +25,28 @@ Note: The repo contains only samples, so its not required to clone this repo.
 
 | Release branch name                                                                          | version | Application release version |
 | -------------------------------------------------------------------------------------------- | ------- | --------------------------- |
-| [Release/9.26](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.26) | 9.26.\* | 10.0.16                     |
-| [Release/9.27](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.27) | 9.27.\* | 10.0.17                     |
-| [Release/9.28](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.28) | 9.28.\* | 10.0.18                     |
-| [Release/9.29](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.29) | 9.29.\* | 10.0.19                     |
-| [Release/9.30](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.30) | 9.30.\* | 10.0.20                     |
-| [Release/9.31](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.31) | 9.31.\* | 10.0.21                     |
-| [Release/9.32](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.32) | 9.32.\* | 10.0.22                     |
 | [Release/9.33](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.33) | 9.33.\* | 10.0.23                     |
 | [Release/9.34](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.34) | 9.34.\* | 10.0.24                     |
 | [Release/9.35](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.35) | 9.35.\* | 10.0.25                     |
+| [Release/9.36](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.36) | 9.36.\* | 10.0.26                     |
+| [Release/9.37](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.37) | 9.37.\* | 10.0.27                     |
+| [Release/9.38](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.38) | 9.38.\* | 10.0.28                     |
 
 **Extension repository:**
 
 Extension code or repository if required can download and consume the samples and templates from [microsoft](https://github.com/microsoft)/[Dynamics365Commerce.ScaleUnit](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit), the sample scale unit repo contains nuget.config, repo.props, CustomizationPackage.props and build pipelines script which provide guidance on how extension can setup the repo metadata files.
 
-### Dynamics365Commerce.ScaleUnit repo folders and projects:
+### Dynamics365Commerce.ScaleUnit repo folders and projects
 
-| Folder                                                                     | Project                                                                                                           | Description                                                                                                                                          |
-| -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Channel Database](./src/ScaleUnitSample/ChannelDatabase)                  | [ChannelDatabase.csproj](./src/ScaleUnitSample/ChannelDatabase/ChannelDatabase.csproj)                            | This project contains samples on how to create Commerce Runtime database extensions.                                                                 |
-| [CommerceRuntime](./src/ScaleUnitSample/CommerceRuntime)                   | [CommerceRuntime.csproj](./src/ScaleUnitSample/CommerceRuntime/CommerceRuntime.csproj)                            | Controller – Sample code for how to implement new RS APIs.Entities, Messages and RequestHandlers – Sample code for how to implement new CRT service. |
-| [ScaleUnit](./src/ScaleUnitSample/ScaleUnit)                               | [ScaleUnit.csproj](./src/ScaleUnitSample/ScaleUnit/ScaleUnit.csproj)                                              | Sample project on how to generate the CSU                                                                                                            |
-| [ScaleUnit.Installer](./src/ScaleUnitSample/Installer)                     | [ScaleUnit.csproj](./src/ScaleUnitSample/Installer/ScaleUnit.Installer.csproj)                                    | Sample project on how to generate the CSU installer.                                                                                                 |
-| [POS](./src/ScaleUnitSample/POS)                                           | [POS.csproj](./src/ScaleUnitSample/POS/POS.csproj)                                                                | Contains samples on how to create POS extensions.                                                                                                    |
-| [E-CommerceProxyGenerator](./src/ScaleUnitSample/E-CommerceProxyGenerator) | [E-CommerceProxyGenerator.csproj](./src/ScaleUnitSample/E-CommerceProxyGenerator/E-CommerceProxyGenerator.csproj) | Contains a sample on how to generate extension proxies for E-Commerce Application.                                                                   |
+| Folder                                                                   | Project                                                                                                                    | Description                                                                                                                                          |
+|--------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [Channel Database](./src/ScaleUnitSample/ChannelDatabase)                | [ChannelDatabase.csproj](./src/ScaleUnitSample/ChannelDatabase/ChannelDatabase.csproj)                                     | This project contains samples on how to create Commerce Runtime database extensions.                                                                 |
+| [CommerceRuntime](./src/ScaleUnitSample/CommerceRuntime)                 | [CommerceRuntime.csproj](./src/ScaleUnitSample/CommerceRuntime/CommerceRuntime.csproj)                                     | Controller – Sample code for how to implement new RS APIs.Entities, Messages and RequestHandlers – Sample code for how to implement new CRT service. |
+| [ScaleUnit](./src/ScaleUnitSample/ScaleUnit)                             | [ScaleUnit.csproj](./src/ScaleUnitSample/ScaleUnit/ScaleUnit.csproj)                                                       | Sample project on how to generate the CSU                                                                                                            |
+| [ScaleUnit.Installer](./src/ScaleUnitSample/Installer)                   | [ScaleUnit.csproj](./src/ScaleUnitSample/Installer/ScaleUnit.Installer.csproj)                                             | Sample project on how to generate the CSU installer.                                                                                                 |
+| [POS](./src/ScaleUnitSample/POS)                                         | [POS.csproj](./src/ScaleUnitSample/POS/POS.csproj)                                                                         | Contains samples on how to create POS extensions.                                                                                                    |
+| [TypeScriptProxyGenerator](./src/ScaleUnitSample/CommerceProxyGenerator) | [TypeScriptProxyGenerator.csproj](./src/ScaleUnitSample/CommerceProxyGenerator/TypeScript/TypeScriptProxyGenerator.csproj) | Contains a sample on how to generate typescript extension proxies for Commerce Applications.                                                       |
+| [CSharpProxyGenerator](./src/ScaleUnitSample/CommerceProxyGenerator)     | [CSharpProxyGenerator.csproj](./src/ScaleUnitSample/CommerceProxyGenerator/CSharp/CSharpProxyGenerator.csproj)             | Contains a sample on how to generate C# extension proxies for Commerce Applications.                                                          |
 
 Samples for instore components like Modern POS, Cloud POS, Hardware station and Cloud scale unit – Self hosted are published in the [Dynamics365Commerce.InStore](https://github.com/microsoft/Dynamics365Commerce.InStore) repo.
 
@@ -63,7 +60,7 @@ Commerce contracts, messages, entities, and request packages are published in th
 
 Consume the commerce packages from this [location](https://pkgs.dev.azure.com/commerce-partner/Registry/_packaging/dynamics365-commerce/nuget/v3/index.json), extension can add package source location in the nuget.config of their extension project file.
 
-```
+```xml
 <packageSources>
     <add key="dynamics365-commerce" value="https://pkgs.dev.azure.com/commerce-partner/Registry/_packaging/dynamics365-commerce/nuget/v3/index.json" />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
@@ -111,41 +108,39 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 
 | Package version  | Application release      |
 | ---------------- | ------------------------ |
-| 9.26.x.x-preview | 10.0.16 PEAP release     |
-| 9.26.x.x         | 10.0.16 Customer preview |
-| 9.26.x.x         | 10.0.16 GA               |
-| 9.27.x.x-preview | 10.0.17 PEAP release     |
-| 9.27.x.x         | 10.0.17 Customer preview |
-| 9.27.x.x         | 10.0.17 GA               |
-| 9.28.x.x-preview | 10.0.18 PEAP release     |
-| 9.28.x.x         | 10.0.18 Customer preview |
-| 9.28.x.x         | 10.0.18 GA               |
-| 9.29.x.x-preview | 10.0.19 PEAP release     |
-| 9.29.x.x         | 10.0.19 Customer preview |
-| 9.29.x.x         | 10.0.19 GA               |
-| 9.30.x.x-preview | 10.0.20 PEAP release     |
-| 9.30.x.x         | 10.0.20 Customer preview |
-| 9.30.x.x         | 10.0.20 GA               |
-| 9.31.x.x-preview | 10.0.21 PEAP release     |
-| 9.31.x.x         | 10.0.21 Customer preview |
-| 9.31.x.x         | 10.0.21 GA               |
-| 9.32.x.x-preview | 10.0.22 PEAP release     |
-| 9.32.x.x         | 10.0.22 Customer preview |
-| 9.32.x.x         | 10.0.22 GA               |
-| 9.33.x.x-preview | 10.0.23 PEAP release     |
-| 9.33.x.x         | 10.0.23 Customer preview |
-| 9.33.x.x         | 10.0.23 GA               |
+| 9.34.x.x-preview | 10.0.24 PEAP release     |
+| 9.34.x.x         | 10.0.24 Customer preview |
+| 9.34.x.x         | 10.0.24 GA               |
+| 9.35.x.x-preview | 10.0.25 PEAP release     |
+| 9.35.x.x         | 10.0.25 Customer preview |
+| 9.35.x.x         | 10.0.25 GA               |
+| 9.36.x.x-preview | 10.0.26 PEAP release     |
+| 9.36.x.x         | 10.0.26 Customer preview |
+| 9.36.x.x         | 10.0.26 GA               |
+| 9.37.x.x-preview | 10.0.27 PEAP release     |
+| 9.37.x.x         | 10.0.27 Customer preview |
+| 9.37.x.x         | 10.0.27 GA               |
+| 9.38.x.x-preview | 10.0.28 PEAP release     |
+| 9.38.x.x         | 10.0.28 Customer preview |
+| 9.38.x.x         | 10.0.28 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 
-```
-<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.26.x.x" />
+```xml
+<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.38.x.x" />
 ```
 
 Or
 
+```xml
+<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.38.*" />
 ```
-<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.26.*" />
+
+Or
+
+```xml
+// Available in Visual Studio version 16.6, NuGet version 5.6, .NET Core SDK version 3.1.300
+<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.38.*-*" />
 ```
 
 With every hotfix and new application release, new version of the package will be published in the same public feed, consume the right package version based on the version required for your go-live. Consuming the higher version of the package than your go-live application version may result in runtime and deployment failures.
@@ -170,30 +165,34 @@ Keep your branch strategy simple. Build your strategy from these three concepts:
 
 Create a new feature main branch for our extension, follow the proper naming convention (refer the [Git branching doc for sample naming convention](https://docs.microsoft.com/en-us/azure/devops/repos/git/git-branching-guidance?view=azure-devops#name-your-feature-branches-by-convention))
 
-** Create a new development branch:**
+**Create a new development branch:**
 
 Create a private branch for the development:
 
+```text
 - git checkout -b private/{username}/{feature/description}
+```
 
 Add and commit new changes to the development branch using git -add . and git commit -m&quot; commit message.&quot;
 
 After the development is completed, tested, and validated push the changes to the main branch by doing git push \&lt;remote\&gt; \&lt;branch\&gt;
 
+```text
 - git push origin {private branch name}
+```
 
 **Create a release branch after development:**
 
 After the development changes pushed into the main branch, create a new release branch, and create the deployable packages from the release branch.
 
-- Git checkout -b release/x.x.x
+```text
+- git checkout -b release/x.x.x
+```
 
 Merge the changes from the release branch back to main branch if any changes done in the release branch.
 
-```
-
+```text
 - git checkout master git merge release/x.x.x
-
 ```
 
 **Extension hotfix branch:**
@@ -204,8 +203,6 @@ Like release branch, create hotfix branch for extension from main branch and rel
 
 After a new version of the samples released, if required merge your development branch with the new branch. The repo contains only samples, so it&#39;s not required to always get the updated changes from the branch.
 
-```
-
+```text
 - git checkout master git merge release/x.x.x
-
 ```
