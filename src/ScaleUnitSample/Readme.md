@@ -23,7 +23,7 @@ If you choose to develop by leveraging fully setup CSU locally with all actual c
 1. Clone https://github.com/microsoft/Dynamics365Commerce.ScaleUnit
 1. Install 64 bit version of VS Code for Windows from https://code.visualstudio.com/download
 1. Install *.Net Core SDK 3.1* for Windows x64 from https://dotnet.microsoft.com/download/dotnet/3.1.
-1. Install *.NET Framework 4.6.1 Developer pack* from https://dotnet.microsoft.com/download/dotnet-framework/thank-you/net461-developer-pack-offline-installer.
+1. Install *.NET Framework 4.7.2 Developer pack* from https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net472-developer-pack-offline-installer.
 1. Install the *Hosting Bundle* (click literally "Hosting Bundle" link, not "x64" nor "x86") for Windows from the same above referenced link.
 1. Navigate to https://lcs.dynamics.com/V2/SharedAssetLibrary select the section *Retail Self-service package files* and then locate there the file ending with *Commerce Scale Unit (SEALED)*. Make sure to select there the version for the release you need, for instance 10.0.22, 10.0.23 and so on. Download the file and place it in the folder [Download](./Download)
 1. Launch the VS Code as Administrator and open src\ScaleUnitSample by leveraging the menu File->Open **Folder**.
@@ -81,7 +81,7 @@ The below prerequisites are required at runtime for both modes: Self-Hosted and 
 #Components' outputs
 Once the build is successfully completed, you can leverage the outputs to deploy your extensions:
 - Cloud Scale Unit extension package is located in ScaleUnit\bin\Debug\netstandard2.0 folder - used for Cloud deployments
-- Scale Unit extension installer is located in Installer\bin\Debug\net461  - used for on-prem (in-store) installations 
+- Scale Unit extension installer is located in Installer\bin\Debug\net472  - used for on-prem (in-store) installations 
 
 #Test and Debug
 
@@ -100,6 +100,8 @@ This is a very light-weight version of the scale unit providing a quick way to d
 ###Cons
 - Doesn't match topology used in real production environments (no CPOS, no Async Client, no RTS calls, no HTTPS).
 - Real Time operations cannot be fully tested (they must be mocked).
+- Device Activation is not supported, therefore this mode cannot be used for end to end usage with MPOS/CPOS/StoreCommerce.
+- Only those APIs which work in Anonymous authentication context can be used.
 
 ### Debugging
 Self-hosted mode is enabled by default, to run it hit *F5 (Start Debugging)* (supported in Visual Studio Code only), then the following will be done automatically (supported in Visual Studio Code only):
@@ -159,7 +161,7 @@ This is a complete on-prem Scale Unit with all the components matching real prod
 At this time you have fully functional On-Prem deployed Scale Unit which includes:
 - Channel DB
 - Async Client
-- ASP.NET Core 3.1 based Retail Server capable of interacting with HQ via RTS
+- ASP.NET Core 6 based Retail Server capable of interacting with HQ via RTS
 - Cloud POS
 
 You can find URLs corresponding to just deployed CPOS and CSU if you review the Base Installer's log towards the end when CSU and CPOS are health-checked. In order to populate the Channel DB with data from HQ you will need to execute the step \#28 from [here](https://docs.microsoft.com/en-us/dynamics365/commerce/dev-itpro/retail-store-scale-unit-configuration-installation) assuming you have already performed previous steps described in that document.

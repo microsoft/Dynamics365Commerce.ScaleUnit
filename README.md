@@ -25,12 +25,12 @@ Note: The repo contains only samples, so its not required to clone this repo.
 
 | Release branch name                                                                          | version | Application release version |
 | -------------------------------------------------------------------------------------------- | ------- | --------------------------- |
-| [Release/9.33](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.33) | 9.33.\* | 10.0.23                     |
 | [Release/9.34](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.34) | 9.34.\* | 10.0.24                     |
 | [Release/9.35](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.35) | 9.35.\* | 10.0.25                     |
 | [Release/9.36](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.36) | 9.36.\* | 10.0.26                     |
 | [Release/9.37](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.37) | 9.37.\* | 10.0.27                     |
 | [Release/9.38](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.38) | 9.38.\* | 10.0.28                     |
+| [Release/9.39](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.39) | 9.39.\* | 10.0.29                     |
 
 **Extension repository:**
 
@@ -108,9 +108,6 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 
 | Package version  | Application release      |
 | ---------------- | ------------------------ |
-| 9.34.x.x-preview | 10.0.24 PEAP release     |
-| 9.34.x.x         | 10.0.24 Customer preview |
-| 9.34.x.x         | 10.0.24 GA               |
 | 9.35.x.x-preview | 10.0.25 PEAP release     |
 | 9.35.x.x         | 10.0.25 Customer preview |
 | 9.35.x.x         | 10.0.25 GA               |
@@ -123,24 +120,27 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.38.x.x-preview | 10.0.28 PEAP release     |
 | 9.38.x.x         | 10.0.28 Customer preview |
 | 9.38.x.x         | 10.0.28 GA               |
+| 9.39.x.x-preview | 10.0.29 PEAP release     |
+| 9.39.x.x         | 10.0.29 Customer preview |
+| 9.39.x.x         | 10.0.29 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 
 ```xml
-<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.38.x.x" />
+<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.39.x.x" />
 ```
 
 Or
 
 ```xml
-<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.38.*" />
+<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.39.*" />
 ```
 
 Or
 
 ```xml
 // Available in Visual Studio version 16.6, NuGet version 5.6, .NET Core SDK version 3.1.300
-<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.38.*-*" />
+<PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="9.39.*-*" />
 ```
 
 With every hotfix and new application release, new version of the package will be published in the same public feed, consume the right package version based on the version required for your go-live. Consuming the higher version of the package than your go-live application version may result in runtime and deployment failures.

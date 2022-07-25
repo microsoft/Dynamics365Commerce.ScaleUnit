@@ -13,7 +13,7 @@ if (Test-Path -Path $InstallerPath) {
     & "$InstallerPath" uninstall
     if ($LastExitCode -ne 0) {
         Write-Host
-        Write-CustomError "The base product uninstallation has failed with exit code $LastExitCode. Please examine the above logs to fix a problem and start again."
+        Write-CustomError "The base product uninstallation has failed with exit code $LastExitCode. Please examine the logs to fix a problem and start again. If the logs are not available in the output, locate them under %PROGRAMDATA%\Microsoft Dynamics 365\10.0\logs."
         Write-Host
         exit $LastExitCode
     }

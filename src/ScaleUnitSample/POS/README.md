@@ -10,7 +10,7 @@ Steps to run the sample:
 4.	Build the POS sample, output installer package will be created.
 5.	Run the extension installer generated using command prompt.
 
-   Ex: C:\ModernPos.Installer\bin\Debug\net461> .\ModernPos.Installer.exe install
+   Ex: C:\ModernPos.Installer\bin\Debug\net472> .\ModernPos.Installer.exe install
 
 6.	After you've finished installing the extension, close Modern POS if it's running. Then, to load the extension, open Modern POS by using the Install/Update Modern POS icon on the desktop. The extensions .appx file will be installed. The previous steps copy the .appx file and other files to the correct location.
 7.	Validate the extension scenarios, search for a product in the POS search header bar, POS will navigate to the POS search view, you should see the Custom Navigate to Full System Example View app bar button and clicking that button POS should navigate to a custom view.

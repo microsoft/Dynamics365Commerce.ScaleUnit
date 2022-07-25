@@ -8,7 +8,7 @@ $workspaceFolder = $Env:common_workspaceFolder
 $NewLine = [Environment]::NewLine
 
 Write-Host
-$InstallerPath = Join-Path $workspaceFolder "Installer\bin\Debug\net461\ScaleUnit.Sample.Installer.exe"
+$InstallerPath = Join-Path $workspaceFolder "Installer\bin\Debug\net472\ScaleUnit.Sample.Installer.exe"
 if (Test-Path -Path $InstallerPath) {
     Write-Host "Uninstalling the extension."
     & "$InstallerPath" uninstall
@@ -34,5 +34,5 @@ if (Test-Path -Path $InstallerPath) {
     }
 }
 else {
-    Write-Host "The extension installer was not found in "$workspaceFolder\Installer\bin\Debug\net461\" directory."
+    Write-Host "The extension installer was not found in "$workspaceFolder\Installer\bin\Debug\net472\" directory."
 }
