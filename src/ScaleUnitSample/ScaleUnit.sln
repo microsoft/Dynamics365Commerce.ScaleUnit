@@ -17,8 +17,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CSharpProxyGenerator", "Com
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TypeScriptProxyGenerator", "CommerceProxyGenerator\TypeScript\TypeScriptProxyGenerator.csproj", "{8D6CA620-80BE-4518-BB50-75C2DA720379}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PricingEngine", "PricingEngine\PricingEngine.csproj", "{C64ED358-07F4-4BA7-9156-66CF3CF99165}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -53,10 +51,6 @@ Global
 		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8D6CA620-80BE-4518-BB50-75C2DA720379}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C64ED358-07F4-4BA7-9156-66CF3CF99165}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C64ED358-07F4-4BA7-9156-66CF3CF99165}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C64ED358-07F4-4BA7-9156-66CF3CF99165}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C64ED358-07F4-4BA7-9156-66CF3CF99165}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

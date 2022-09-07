@@ -25,12 +25,12 @@ Note: The repo contains only samples, so its not required to clone this repo.
 
 | Release branch name                                                                          | version | Application release version |
 | -------------------------------------------------------------------------------------------- | ------- | --------------------------- |
-| [Release/9.34](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.34) | 9.34.\* | 10.0.24                     |
 | [Release/9.35](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.35) | 9.35.\* | 10.0.25                     |
 | [Release/9.36](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.36) | 9.36.\* | 10.0.26                     |
 | [Release/9.37](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.37) | 9.37.\* | 10.0.27                     |
 | [Release/9.38](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.38) | 9.38.\* | 10.0.28                     |
 | [Release/9.39](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.39) | 9.39.\* | 10.0.29                     |
+| [Release/9.40](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.40) | 9.40.\* | 10.0.30                     |
 
 **Extension repository:**
 
@@ -89,6 +89,7 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | Microsoft.Dynamics.Commerce.Runtime.Messages                          | This package contains all commerce runtime messages libraries                                                                                                 |
 | Microsoft.Dynamics.Commerce.Runtime.RealtimeServices.Messages         | This package contains all the commerce real runtime libraries                                                                                                 |
 | Microsoft.Dynamics.Commerce.Runtime.Services.Messages                 | This package contains all the commerce service messages libraries                                                                                             |
+| Microsoft.Dynamics.Commerce.Runtime.Services.PricingEngine.Contracts  | This package contains all the Commerce Pricing Engine contracts                                                                                               |
 | Microsoft.Dynamics.Commerce.HardwareStation.Core                      | This package contains all the HWS libraries                                                                                                                   |
 | Microsoft.Dynamics.Commerce.HardwareStation.PeripheralRequests        | This package contains all the HWS peripherals request libraries                                                                                               |
 | Microsoft.Dynamics.Commerce.HardwareStation.Peripherals.Contracts     | This package contains all the HWS peripherals contracts libraries                                                                                             |
@@ -108,9 +109,6 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 
 | Package version  | Application release      |
 | ---------------- | ------------------------ |
-| 9.35.x.x-preview | 10.0.25 PEAP release     |
-| 9.35.x.x         | 10.0.25 Customer preview |
-| 9.35.x.x         | 10.0.25 GA               |
 | 9.36.x.x-preview | 10.0.26 PEAP release     |
 | 9.36.x.x         | 10.0.26 Customer preview |
 | 9.36.x.x         | 10.0.26 GA               |
@@ -123,6 +121,9 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.39.x.x-preview | 10.0.29 PEAP release     |
 | 9.39.x.x         | 10.0.29 Customer preview |
 | 9.39.x.x         | 10.0.29 GA               |
+| 9.40.x.x-preview | 10.0.30 PEAP release     |
+| 9.40.x.x         | 10.0.30 Customer preview |
+| 9.40.x.x         | 10.0.30 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 
