@@ -57,28 +57,31 @@ namespace Contoso.CommerceRuntime.Triggers
         /// <param name="response">response</param>
         public async Task OnExecuted(Request request, Response response)
         {
-            if (response != null && request is GetChannelConfigurationDataRequest)
+            switch (request)
             {
-                var originalRequest = request as GetChannelConfigurationDataRequest;
-                var data = response as SingleEntityDataServiceResponse<ChannelConfiguration>;
-                if (data != null && data.Entity != null && data.Entity.GetProperty(PropertyKey) == null)
-                {
-                    // In this example, we just put the configuration parameters as part of channelConfiguration property.
-                    var configurationParameters = (await request.RequestContext.ExecuteAsync<EntityDataServiceResponse<RetailConfigurationParameter>>(new GetConfigurationParametersDataRequest(originalRequest.ChannelId)).ConfigureAwait(false)).ToList();
-
-                    // The reason we need a lock here because of thread-safety.
-                    // ChannelConfiguration is an object required in most crt request, and we cached in memory on the underlying ChannelDataService.
-                    // In case there is concurrent crt request, without lock here, it will modify against the same ChannelConfiguration and will result as 100% CPU usage in worst case.
-                    // NOTE: both SetProperty and ExtensionProperties are not thread-safe.
-                    // NOTE: same situation for DeviceConfiguration, in which it is also required in most crt request and is cached in underlying DataService.
-                    lock (PropertyKey)
+                case GetChannelConfigurationDataRequest originalRequest:
+                    var data = response as SingleEntityDataServiceResponse<ChannelConfiguration>;
+                    if (data != null && data.Entity != null && data.Entity.GetProperty(PropertyKey) == null)
                     {
-                        if (data.Entity.GetProperty(PropertyKey) == null)
+                        // In this example, we just put the configuration parameters as part of channelConfiguration property.
+                        var configurationParameters = (await request.RequestContext.ExecuteAsync<EntityDataServiceResponse<RetailConfigurationParameter>>(new GetConfigurationParametersDataRequest(originalRequest.ChannelId)).ConfigureAwait(false)).ToList();
+
+                        // The reason we need a lock here because of thread-safety.
+                        // ChannelConfiguration is an object required in most crt request, and we cached in memory on the underlying ChannelDataService.
+                        // In case there is concurrent crt request, without lock here, it will modify against the same ChannelConfiguration and will result as 100% CPU usage in worst case.
+                        // NOTE: both SetProperty and ExtensionProperties are not thread-safe.
+                        // NOTE: same situation for DeviceConfiguration, in which it is also required in most crt request and is cached in underlying DataService.
+                        lock (data.Entity)
                         {
-                            data.Entity.SetProperty(PropertyKey, configurationParameters);
+                            if (data.Entity.GetProperty(PropertyKey) == null)
+                            {
+                                data.Entity.SetProperty(PropertyKey, configurationParameters);
+                            }
                         }
                     }
-                }
+                    break;
+                default:
+                    throw new NotSupportedException($"Request '{request.GetType()}' is not supported.");
             }
         }
     }

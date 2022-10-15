@@ -11,6 +11,7 @@ namespace Contoso.CommerceRuntime.Triggers
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading.Tasks;
     using Microsoft.Dynamics.Commerce.Runtime;
     using Microsoft.Dynamics.Commerce.Runtime.DataModel;
     using Microsoft.Dynamics.Commerce.Runtime.Messages;
@@ -18,7 +19,7 @@ namespace Contoso.CommerceRuntime.Triggers
     /// <summary>
     /// Class that implements a post trigger for the GetCustomerDataRequest request type.
     /// </summary>
-    public class DefinePosExtensionTrigger : IRequestTrigger
+    public class DefinePosExtensionTrigger : IRequestTriggerAsync
     {
         /// <summary>
         /// Gets the supported requests for this trigger.
@@ -36,7 +37,7 @@ namespace Contoso.CommerceRuntime.Triggers
         /// </summary>
         /// <param name="request">The request.</param>
         /// <param name="response">The response.</param>
-        public void OnExecuted(Request request, Response response)
+        public Task OnExecuted(Request request, Response response)
         {
             ThrowIf.Null(request, "request");
             ThrowIf.Null(response, "response");
@@ -48,14 +49,17 @@ namespace Contoso.CommerceRuntime.Triggers
             extensionPackageDefinition.IsEnabled = true;
 
             getExtensionsResponse.ExtensionPackageDefinitions.Add(extensionPackageDefinition);
+
+            return Task.CompletedTask;
         }
 
         /// <summary>
         /// Pre trigger code.
         /// </summary>
         /// <param name="request">The request.</param>
-        public void OnExecuting(Request request)
+        public Task OnExecuting(Request request)
         {
+            return Task.CompletedTask;
         }
     }
 }

@@ -49,32 +49,20 @@ namespace Contoso.CommerceRuntime.RequestHandlers
         /// <returns>Result of executing request, or null object for void operations.</returns>
         public Task<Response> Execute(Request request)
         {
-            if (request == null)
-            {
-                throw new ArgumentNullException("request");
-            }
+            ThrowIf.Null(request, nameof(request));
 
-            Type reqType = request.GetType();
-            if (reqType == typeof(CreateExampleEntityDataRequest))
+            switch (request)
             {
-                return this.CreateExampleEntity((CreateExampleEntityDataRequest)request);
-            }
-            else if (reqType == typeof(ExampleEntityDataRequest))
-            {
-                return this.GetExampleEntities((ExampleEntityDataRequest)request);
-            }
-            else if (reqType == typeof(UpdateExampleEntityDataRequest))
-            {
-                return this.UpdateExampleEntity((UpdateExampleEntityDataRequest)request);
-            }
-            else if (reqType == typeof(DeleteExampleEntityDataRequest))
-            {
-                return this.DeleteExampleEntity((DeleteExampleEntityDataRequest)request);
-            }
-            else
-            {
-                string message = string.Format(CultureInfo.InvariantCulture, "Request '{0}' is not supported.", reqType);
-                throw new NotSupportedException(message);
+                case CreateExampleEntityDataRequest createExampleEntityDataRequest:
+                    return this.CreateExampleEntity(createExampleEntityDataRequest);
+                case ExampleEntityDataRequest exampleEntityDataRequest:
+                    return this.GetExampleEntities(exampleEntityDataRequest);
+                case UpdateExampleEntityDataRequest updateExampleEntityDataRequest:
+                    return this.UpdateExampleEntity(updateExampleEntityDataRequest);
+                case DeleteExampleEntityDataRequest deleteExampleEntityDataRequest:
+                    return this.DeleteExampleEntity(deleteExampleEntityDataRequest);
+                default:
+                    throw new NotSupportedException($"Request '{request.GetType()}' is not supported.");
             }
         }
 
