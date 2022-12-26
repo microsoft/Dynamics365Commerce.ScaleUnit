@@ -1,0 +1,21 @@
+{
+    "codebaseName": "D365-AX-Commerce-Samples-ScaleUnit",
+    "ppe": false,
+    "notificationAliases": [
+        "d365ccesa@microsoft.com"
+    ],
+    "codebaseAdmins": [
+        "EUROPE\\axbuild"
+    ],
+    "instanceUrl": "https://msdyneng.visualstudio.com/defaultcollection",
+    "projectName": "FinOps",
+    "areaPath": "FinOps\\Retail and Services\\Deployment and servicing",
+    "iterationPath": "FinOps",
+    "tools": [
+        "APIScan",
+        "BinSkim",
+        "CredScan",
+        "PoliCheck",
+        "ARMory"
+    ]
+}
