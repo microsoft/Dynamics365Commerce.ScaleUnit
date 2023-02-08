@@ -232,6 +232,100 @@ Rule description: When an asynchronous method awaits a ```Task``` directly, cont
 
 Rule description: When comparing values using ```ReferenceEquals```, if objA and objB are value types, they are boxed before they are passed to the ```ReferenceEquals``` method. This means that even if both objA and objB represent the same instance of a value type, the ```ReferenceEquals``` method nevertheless returns false, as the following example shows.
 
+### [CA3061](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3061): Do not add schema by URL.
+
+Rule description: Overload of ```XmlSchemaCollection.Add(String, String)``` is using ```XmlUrlResolver``` to specify external XML schema in the form of an URI. If the URI String is tainted, it may lead to parsing of a malicious XML schema, which allows for the inclusion of XML bombs and malicious external entities. This could allow a malicious attacker to perform a denial of service, information disclosure, or server-side request forgery attack
+
+### [CA3075](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3075): Insecure DTD Processing.
+
+Rule description: A Document Type Definition (DTD) is one of two ways an XML parser can determine the validity of a document, as defined by the World Wide Web Consortium (W3C) Extensible Markup Language (XML) 1.0. This rule seeks properties and instances where untrusted data is accepted to warn developers about potential Information Disclosure threats or Denial of Service (DoS) attacks
+
+### [CA3076](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3076): Insecure XSLT Script Execution.
+
+Rule description: XSLT is a World Wide Web Consortium (W3C) standard for transforming XML data. XSLT is typically used to write style sheets to transform XML data to other formats such as HTML, fixed-length text, comma-separated text, or a different XML format. Although prohibited by default, you may choose to enable it for your project.
+
+### [CA3077](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3077): Insecure Processing in API Design, XML Document and XML Text Reader.
+
+Rule description: A Document Type Definition (DTD) is one of two ways an XML parser can determine the validity of a document, as defined by the World Wide Web Consortium (W3C) Extensible Markup Language (XML) 1.0. This rule seeks properties and instances where untrusted data is accepted to warn developers about potential Information Disclosure threats, which may lead to Denial of Service (DoS) attacks
+
+### [CA3147](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3147): Mark verb handlers with ValidateAntiForgeryToken.
+
+Rule description: When designing an ASP.NET MVC controller, be mindful of cross-site request forgery attacks. A cross-site request forgery attack can send malicious requests from an authenticated user to your ASP.NET MVC controller.
+
+### [CA5350](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350): Do Not Use Weak Cryptographic Algorithms.
+
+Rule description: Weak encryption algorithms and hashing functions are used today for a number of reasons, but they should not be used to guarantee the confidentiality of the data they protect.
+
+The rule triggers when it finds 3DES, SHA1 or RIPEMD160 algorithms in the code and throws a warning to the user.
+
+### [CA5351](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5351): Do Not Use Broken Cryptographic Algorithms
+
+Rule description: Broken cryptographic algorithms are not considered secure and their use should be discouraged. The MD5 hash algorithm is susceptible to known collision attacks, though the specific vulnerability will vary based on the context of use.
+
+### [CA5359](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5359) : Do not disable certificate validation
+
+Rule description: A certificate can help authenticate the identity of the server. Clients should validate the server certificate to ensure requests are sent to the intended server. If the ServicePointManager.ServerCertificateValidationCallback always returns ```true```, then by default any certificate will pass validation for all outgoing HTTPS requests.
+
+### [CA5360](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5360) : Do not call dangerous methods in deserialization.
+
+Rule description: nsecure deserialization is a vulnerability which occurs when untrusted data is used to abuse the logic of an application, inflict a Denial-of-Service (DoS) attack, or even execute arbitrary code upon it being deserialized. It's frequently possible for malicious users to abuse these deserialization features when the application is deserializing untrusted data which is under their control.
+
+### [CA5363](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5363): Do not disable request validation.
+
+Rule description: Request validation is a feature in ASP.NET that examines HTTP requests and determines whether they contain potentially dangerous content that can lead to injection attacks, including cross-site-scripting.
+
+### [CA5364](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5364): Do not use deprecated security protocols.
+
+Rule description: Transport Layer Security (TLS) secures communication between computers, most commonly with Hypertext Transfer Protocol Secure (HTTPS). Older protocol versions of TLS are less secure than TLS 1.2 and TLS 1.3 and are more likely to have new vulnerabilities. Avoid older protocol versions to minimize risk.
+
+### [CA5365](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5365): Do Not Disable HTTP Header Checking.
+
+Rule description: HTTP header checking enables encoding of the carriage return and newline characters, \r and \n, that are found in response headers. This encoding can help to avoid injection attacks that exploit an application that echoes untrusted data contained in the header
+
+### [CA5366](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5366): Use XmlReader For DataSet Read XML.
+
+Rule description: Using a ```System.Data.DataSet``` to read XML with untrusted data may load dangerous external references, which should be restricted by using an ```XmlReader``` with a secure resolver or with DTD processing disabled.
+
+### [CA5368](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5368): Set ViewStateUserKey For Classes Derived From Page.
+
+Rule description: When designing an ASP.NET Web Form, be mindful of cross-site request forgery (CSRF) attacks. A CSRF attack can send malicious requests from an authenticated user to your ASP.NET Web Form.
+
+### [CA5369](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5369): Use XmlReader for Deserialize.
+
+Rule description: Processing untrusted DTD and XML schemas may enable loading dangerous external references, which should be restricted by using an ```XmlReader``` with a secure resolver or with DTD and XML inline schema processing disabled. This rule detects code that uses the ```XmlSerializer.Deserialize``` method and does not take ```XmlReader``` as a constructor parameter.
+
+### [CA5370](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5370): Use XmlReader for validating reader.
+
+Rule description: Processing untrusted DTD and XML schemas may enable loading dangerous external references. This dangerous loading can be restricted by using an ```XmlReader``` with a secure resolver or with DTD and XML inline schema processing disabled. This rule detects code that uses the ```XmlValidatingReader``` class without ```XmlReader``` as a constructor parameter.
+
+### [CA5371](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5371): Use XmlReader for schema read.
+
+Rule description: Processing untrusted DTD and XML schemas may enable loading dangerous external references. Using an ```XmlReader``` with a secure resolver or with DTD and XML inline schema processing disabled restricts this. This rule detects code that uses the ```XmlSchema.Read``` method without ```XmlReader``` as a parameter.
+
+### [CA5372](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5372): Use XmlReader for XPathDocument.
+
+Rule description: Processing XML from untrusted data may load dangerous external references, which can be restricted by using an ```XmlReader``` with a secure resolver or with DTD processing disabled. This rule detects code that uses the ```XPathDocument``` class and doesn’t take ```XmlReader``` as a constructor parameter.
+
+### [CA5373](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5373): Do not use obsolete key derivation function.
+
+Rule description: This rule detects the invocation of weak key derivation methods System.Security.Cryptography.PasswordDeriveBytes and Rfc2898DeriveBytes.CryptDeriveKey. System.Security.Cryptography.PasswordDeriveBytes used a weak algorithm PBKDF1. Rfc2898DeriveBytes.CryptDeriveKey does not use iteration count and salt from the Rfc2898DeriveBytes object, which makes it weak.
+
+### [CA5374](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5374): Do Not Use XslTransform.
+
+Rule description: XslTransform is vulnerable when operating on untrusted input. An attack could execute arbitrary code.
+
+### [CA5379](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5379): Ensure key derivation function algorithm is sufficiently strong.
+
+Rule description: he Rfc2898DeriveBytes class defaults to using the SHA1 algorithm. When instantiating an Rfc2898DeriveBytes object, you should specify a hash algorithm of SHA256 or higher. Note that Rfc2898DeriveBytes.HashAlgorithm property only has a get accessor.
+
+### [CA5384](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5384): Do not use digital signature algorithm (DSA).
+
+Rule description: DSA is a weak asymmetric encryption algorithm.
+
+### [CA5385](https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5385): Use Rivest–Shamir–Adleman (RSA) algorithm with sufficient key size. 
+
+Rule description: An RSA key smaller than 2048 bits is more vulnerable to brute force attacks.
+
 ## Nuget warnings as errors
 
 ### [NU1701](https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu1701)

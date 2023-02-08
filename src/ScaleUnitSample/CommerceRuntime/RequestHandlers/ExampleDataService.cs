@@ -16,6 +16,7 @@ namespace Contoso.CommerceRuntime.RequestHandlers
     using System.Threading.Tasks;
     using Microsoft.Dynamics.Commerce.Runtime;
     using Microsoft.Dynamics.Commerce.Runtime.Data;
+    using Microsoft.Dynamics.Commerce.Runtime.DataAccess.SqlServer;
     using Microsoft.Dynamics.Commerce.Runtime.Messages;
     using Contoso.CommerceRuntime.Entities.DataModel;
     using Contoso.CommerceRuntime.Messages;
@@ -72,7 +73,7 @@ namespace Contoso.CommerceRuntime.RequestHandlers
             ThrowIf.Null(request.EntityData, nameof(request.EntityData));
 
             long insertedId = 0;
-            using (var databaseContext = new DatabaseContext(request.RequestContext))
+            using (var databaseContext = new SqlServerDatabaseContext(request.RequestContext))
             {
                 ParameterSet parameters = new ParameterSet();
                 parameters["@i_ExampleInt"] = request.EntityData.IntData;
@@ -119,7 +120,7 @@ namespace Contoso.CommerceRuntime.RequestHandlers
             }
 
             bool updateSuccess = false;
-            using (var databaseContext = new DatabaseContext(request.RequestContext))
+            using (var databaseContext = new SqlServerDatabaseContext(request.RequestContext))
             {
                 ParameterSet parameters = new ParameterSet();
                 parameters["@bi_Id"] = request.ExampleEntityKey;
@@ -145,7 +146,7 @@ namespace Contoso.CommerceRuntime.RequestHandlers
             }
 
             bool deleteSuccess = false;
-            using (var databaseContext = new DatabaseContext(request.RequestContext))
+            using (var databaseContext = new SqlServerDatabaseContext(request.RequestContext))
             {
                 ParameterSet parameters = new ParameterSet();
                 parameters["@bi_Id"] = request.ExampleEntityKey;
