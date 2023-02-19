@@ -3,6 +3,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageName>POS</PackageName>
   </PropertyGroup>
 
   <ItemGroup>
