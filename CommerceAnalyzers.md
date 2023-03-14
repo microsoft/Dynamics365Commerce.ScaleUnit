@@ -145,6 +145,29 @@ public async Task DoAsync()
 }
 ```
 
+### UseSystemDataAnnotationsAnalyzer
+
+Problem: CRT extension developers may use `KeyAttribute` from CRT framework instead of `System.ComponentModel.DataAnnotations.KeyAttribute` by mistake to annotate primary key property in an entity type.
+
+Solution: Use `System.ComponentModel.DataAnnotations.KeyAttribute` to annotate primary key property of an entity type.
+
+Example:
+```cs
+// Violation: Using the wrong KeyAttribute
+public class SomeEntity : CommerceEntity
+{
+    [Microsoft.Dynamics.Commerce.Runtime.ComponentModel.DataAnnotations.KeyAttribute]
+    public int Id { get; set; }
+}
+
+// Correct: Using the right KeyAttribute
+public class SomeEntity : CommerceEntity
+{
+    [System.ComponentModel.DataAnnotations.KeyAttribute]
+    public int Id { get; set; }
+}
+```
+
 ## NET Analyzers
 
 ### [CA1827](https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca1827): Do not use ```Count/LongCount``` when ```Any``` can be used
