@@ -145,6 +145,31 @@ public async Task DoAsync()
 }
 ```
 
+### UseControllerAttributesCorrectlyAnalyzer
+
+Problem: Using a reserved route prefix for a controller in a CRT extension may cause built-in route to work incorrectly. Similarly, using a controller bound to built-in Commerce entity in an extension may break built-in functionality.
+
+Solution: Only a custom route prefix can be used for a controller in a CRT extension. Also, a controller can only be bound to a custom entity.
+
+Example:
+```cs
+// Violation: Using reserved route prefix and built-in entity
+using Microsoft.Dynamics.Commerce.Runtime.DataModel;
+
+[RoutePrefix("OrgUnits")]
+[BindEntity(typeof(OrgUnit))]
+public class SomeController : IController
+{
+}
+
+// Correct: Using custom route prefix and custom entity
+[RoutePrefix("Custom")]
+[BindEntity(typeof(CustomEntity))]
+public class SomeController : IController
+{
+}
+```
+
 ### UseSystemDataAnnotationsAnalyzer
 
 Problem: CRT extension developers may use `KeyAttribute` from CRT framework instead of `System.ComponentModel.DataAnnotations.KeyAttribute` by mistake to annotate primary key property in an entity type.
