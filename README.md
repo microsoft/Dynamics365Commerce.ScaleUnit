@@ -25,11 +25,11 @@ Note: The repo contains only samples, so its not required to clone this repo.
 
 | Release branch name                                                                          | version | Application release version |
 | -------------------------------------------------------------------------------------------- | ------- | --------------------------- |
-| [Release/9.40](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.40) | 9.40.\* | 10.0.30                     |
 | [Release/9.41](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.41) | 9.41.\* | 10.0.31                     |
 | [Release/9.42](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.42) | 9.42.\* | 10.0.32                     |
 | [Release/9.43](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.43) | 9.43.\* | 10.0.33                     |
 | [Release/9.44](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.44) | 9.44.\* | 10.0.34                     |
+| [Release/9.45](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.45) | 9.45.\* | 10.0.35                     |
 
 **Extension repository:**
 
@@ -49,7 +49,7 @@ Extension code or repository if required can download and consume the samples an
 
 Samples for instore components like Modern POS, Cloud POS, Hardware station and Cloud scale unit – Self hosted are published in the [Dynamics365Commerce.InStore](https://github.com/microsoft/Dynamics365Commerce.InStore) repo.
 
-Readme file inside the Commerce Runtime, ChannelDatabase and ScaleUnit contain more details on how to run the samples.
+Readme file inside the Commerce Runtime, ChannelDatabase and ScaleUnit contain more details on how to run the samples. [Analyzers readme](./CommerceAnalyzers.md) at the root of the repo describes all the Commerce and standard .NET code analysis rules enabled for extension projects.
 
 If you don't need POS or other samples from the repo, exclude the corresponding projects from the solution.
 
@@ -108,9 +108,6 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 
 | Package version  | Application release      |
 | ---------------- | ------------------------ |
-| 9.40.x.x-preview | 10.0.30 PEAP release     |
-| 9.40.x.x         | 10.0.30 Customer preview |
-| 9.40.x.x         | 10.0.30 GA               |
 | 9.41.x.x-preview | 10.0.31 PEAP release     |
 | 9.41.x.x         | 10.0.31 Customer preview |
 | 9.41.x.x         | 10.0.31 GA               |
@@ -123,6 +120,9 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.44.x.x-preview | 10.0.34 PEAP release     |
 | 9.44.x.x         | 10.0.34 Customer preview |
 | 9.44.x.x         | 10.0.34 GA               |
+| 9.45.x.x-preview | 10.0.35 PEAP release     |
+| 9.45.x.x         | 10.0.35 Customer preview |
+| 9.45.x.x         | 10.0.35 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 
