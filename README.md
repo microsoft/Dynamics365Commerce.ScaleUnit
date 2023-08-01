@@ -25,11 +25,11 @@ Note: The repo contains only samples, so its not required to clone this repo.
 
 | Release branch name                                                                          | version | Application release version |
 | -------------------------------------------------------------------------------------------- | ------- | --------------------------- |
-| [Release/9.41](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.41) | 9.41.\* | 10.0.31                     |
 | [Release/9.42](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.42) | 9.42.\* | 10.0.32                     |
 | [Release/9.43](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.43) | 9.43.\* | 10.0.33                     |
 | [Release/9.44](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.44) | 9.44.\* | 10.0.34                     |
 | [Release/9.45](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.45) | 9.45.\* | 10.0.35                     |
+| [Release/9.46](https://github.com/microsoft/Dynamics365Commerce.ScaleUnit/tree/release/9.46) | 9.46.\* | 10.0.36                     |
 
 **Extension repository:**
 
@@ -108,9 +108,6 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 
 | Package version  | Application release      |
 | ---------------- | ------------------------ |
-| 9.41.x.x-preview | 10.0.31 PEAP release     |
-| 9.41.x.x         | 10.0.31 Customer preview |
-| 9.41.x.x         | 10.0.31 GA               |
 | 9.42.x.x-preview | 10.0.32 PEAP release     |
 | 9.42.x.x         | 10.0.32 Customer preview |
 | 9.42.x.x         | 10.0.32 GA               |
@@ -123,6 +120,9 @@ Consume the commerce packages from this [location](https://pkgs.dev.azure.com/co
 | 9.45.x.x-preview | 10.0.35 PEAP release     |
 | 9.45.x.x         | 10.0.35 Customer preview |
 | 9.45.x.x         | 10.0.35 GA               |
+| 9.46.x.x-preview | 10.0.36 PEAP release     |
+| 9.46.x.x         | 10.0.36 Customer preview |
+| 9.46.x.x         | 10.0.36 GA               |
 
 Extension project can consume the correct version by adding the package reference to the project with full version number or use wild card to always get the latest version, recommend option is to use the full version number and update the version based on your go-live version.
 

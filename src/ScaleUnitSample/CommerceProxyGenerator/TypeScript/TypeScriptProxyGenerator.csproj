@@ -15,12 +15,12 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\CommerceRuntime\CommerceRuntime.csproj" />
+      <ProjectReference Include="..\..\CommerceRuntime\CommerceRuntime.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     </ItemGroup>
 
     <!--Provide the path to the commerce runtime extension dll file.-->
     <ItemGroup>
-        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\netstandard2.0\CommerceRuntime.dll" />
+        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\net6.0\CommerceRuntime.dll" />
     </ItemGroup>
 
     <!--If you wish to copy the generated files to a specific directory once project is built, set DestinationFolder property to the path you wish to have the files copied to.-->

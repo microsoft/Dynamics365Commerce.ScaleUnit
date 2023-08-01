@@ -2,7 +2,7 @@
     <Import Project="..\..\CustomizationPackage.props" />
 
     <PropertyGroup>
-        <TargetFramework>netstandard2.0</TargetFramework>
+        <TargetFramework>net6.0</TargetFramework>
         <CommerceProxyGeneratorApplicationType>CSharpExtensions</CommerceProxyGeneratorApplicationType>
         <AssemblyName>Contoso.Commerce.RetailProxy.Extension</AssemblyName>
         <RootNamespace>Contoso.Commerce.RetailProxy.Extension</RootNamespace>
@@ -21,6 +21,6 @@
 
     <!--Provide the path to the commerce runtime extension dll file.-->
     <ItemGroup>
-        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\netstandard2.0\CommerceRuntime.dll" />
+        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\net6.0\CommerceRuntime.dll" />
     </ItemGroup>
 </Project>

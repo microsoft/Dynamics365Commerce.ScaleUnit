@@ -6,15 +6,9 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\ChannelDatabase\ChannelDatabase.csproj">
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\CommerceRuntime\CommerceRuntime.csproj">
-            <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
-        <ProjectReference Include="..\POS\POS.csproj">
-          <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-        </ProjectReference>
+        <ProjectReference Include="..\ChannelDatabase\ChannelDatabase.csproj" ReferenceOutputAssembly="false" />
+        <ProjectReference Include="..\CommerceRuntime\CommerceRuntime.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
+        <ProjectReference Include="..\POS\POS.csproj" ReferenceOutputAssembly="false" SkipGetTargetFrameworkProperties="true" />
     </ItemGroup>
 
     <ItemGroup>
