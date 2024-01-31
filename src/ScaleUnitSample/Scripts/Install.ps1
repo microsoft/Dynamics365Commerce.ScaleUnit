@@ -289,7 +289,7 @@ if ($LastExitCode -ne 0) {
 
 Write-Host
 Write-Host "Copy the binary and symbol files into extensions folder."
-Copy-Item -Path (Join-Path "$workspaceFolder" "\CommerceRuntime\bin\Debug\netstandard2.0\*.pdb") -Destination  (Join-Path "$extensionInstallPath" "\")
+Copy-Item -Path (Join-Path "$workspaceFolder" "\CommerceRuntime\bin\Debug\net6.0\*.pdb") -Destination  (Join-Path "$extensionInstallPath" "\")
 
 if ($Env:baseProduct_UseSelfHost -ne "true") {
     # IIS deployment requires the additional actions to start debugging
