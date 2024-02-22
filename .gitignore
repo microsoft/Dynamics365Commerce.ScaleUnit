@@ -122,6 +122,6 @@ devDependencies/
 # Ignore generated nuget packages
 *.nupkg
 
-# Ignore generated OneBranch build pipeline files
+# Ignore generated build artifacts
 .pid
 .sign/
