@@ -1,0 +1,16 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageFloatingVersionsEnabled>true</CentralPackageFloatingVersionsEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Proxy.ScaleUnit" Version="$(CommerceChannelPackagesVersion)" />
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Sdk.ChannelDatabase" Version="$(CommerceSdkPackagesVersion)" />
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Sdk.Installers.ScaleUnit" Version="$(CommerceSdkPackagesVersion)" />
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Sdk.Pos" Version="$(CommerceSdkPackagesVersion)" />
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Sdk.Runtime" Version="$(CommerceSdkPackagesVersion)" />
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Sdk.ScaleUnit" Version="$(CommerceSdkPackagesVersion)" />
+    <PackageVersion Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" Version="$(CommerceChannelPackagesVersion)" />
+    <PackageVersion Include="Microsoft.TypeScript.MSBuild" Version="4.0.6" />
+  </ItemGroup>
+</Project>
