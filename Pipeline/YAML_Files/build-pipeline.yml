@@ -13,7 +13,7 @@ steps:
       failOnStderr: true
 
   - task: NuGetToolInstaller@1
-    displayName: 'Use NuGet 5.4.0'
+    displayName: 'Use NuGet 6.8.0'
     
   - task: NuGetCommand@2
     displayName: 'NuGet restore'

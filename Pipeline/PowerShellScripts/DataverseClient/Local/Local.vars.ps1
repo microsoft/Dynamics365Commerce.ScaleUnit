@@ -1,50 +1,24 @@
-<#
-.SYNOPSIS
-Checks that msbuild is available.
-#>
-Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
+# Local variables for CSU Extension Package operations.
+# Fill in your values below. Do NOT commit this file to source control.
 
-$installInstructions = "Please download and install the x64 .Net SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0 then restart the VS Code."
+$TenantId                = ''
+$ApplicationId           = ''
+$CertificateThumbprint   = ''
+$DataverseEnvironmentUrl = ''
 
-# First check - the .NET may not be installed at all. Instruct the user to install SDK in that case.
-$dotnetPath = (get-command dotnet.exe -ErrorAction SilentlyContinue).Path
-if (-not $dotnetPath)
-{
-    Write-Host
-    Write-CustomError "Unable to find 'dotnet.exe'. $installInstructions"
-    Write-Host
-    exit 1
-}
+# Optional: Full path to the CSU extension package folder or zip file.
+# If left empty, defaults to: <RepoRoot>\src\ScaleUnitSample\ScaleUnit\bin\Debug\netstandard2.0\CloudScaleUnitExtensionPackage
+$ExtensionPackagePath    = ''
 
-# Second check - the .NET SDK may not be installed. Instruct the user to install SDK in that case.
-$dotnetSdkPath = (& dotnet.exe --list-sdks) | Select -Last 1
-if (-not $dotnetSdkPath)
-{
-    Write-Host
-    Write-CustomError "Unable to find the .Net SDK (although the .NET Runtime is installed). $installInstructions"
-    Write-Host
-    exit 1
-}
+# Optional: Directory to save downloaded package files.
+# If left empty, defaults to the system Downloads folder.
+$OutputDirectory         = ''
 
-$sdkVersionString = (dotnet --list-sdks | Select-String '(\d+\.)+\d+' | select -ExpandProperty Matches | select -ExpandProperty Value | Measure-Object -Maximum | Select-Object -expand Maximum)
-
-$sdkVersion = [Version]::new($sdkVersionString)
-if ($sdkVersion.Major -lt 3) 
-{
-    Write-Host
-    Write-CustomError "The most recent installed .Net SDK version $sdkVersionString is too old. $installInstructions"
-    Write-Host
-    exit 1   
-}
-else
-{
-    Write-Host "Current version of .NET SDK is '$sdkVersionString'."
-}
 # SIG # Begin signature block
 # MIIoLAYJKoZIhvcNAQcCoIIoHTCCKBkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAeO9t3hCmnVB3+
-# Xs+85IyLzRqTQbXtfUncEuK4cHzBK6CCDXYwggX0MIID3KADAgECAhMzAAAEhV6Z
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBHVlOfJ1cIudjX
+# I2zmSrLfwmdcGN7TT3apKdm/IbiBxqCCDXYwggX0MIID3KADAgECAhMzAAAEhV6Z
 # 7A5ZL83XAAAAAASFMA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNVBAYTAlVTMRMwEQYD
 # VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
 # b3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNpZ25p
@@ -121,19 +95,19 @@ else
 # aWNyb3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNp
 # Z25pbmcgUENBIDIwMTECEzMAAASFXpnsDlkvzdcAAAAABIUwDQYJYIZIAWUDBAIB
 # BQCgga4wGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEO
-# MAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIEIGEHfDosR11g0nwFnY6YBmkG
-# r5UiEs1oiMbBsi872WivMEIGCisGAQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8A
+# MAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIEICVy8wHLsWPt46bKeNDatZz+
+# /EXmkb+iH0qxdK51L2wvMEIGCisGAQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8A
 # cwBvAGYAdKEagBhodHRwOi8vd3d3Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEB
-# BQAEggEAYUGYnMbiALcubVimPnjxhLO/Jacq9ye8t0JphuecIOlC0dm1OvLB6rht
-# YdxDiOEJMiWRz65Bk6kkCAmHxmsW0Nt8bx/u3L6FBaTJsEM2dCD3DON2jIuE9+DM
-# xrbmyI4l6lG1tOzHH2Z0pESTDu+R8IDpAR8q3gYimpm6zAkTiftbiitU01jUmvSE
-# IwfGQ1xWkCrVHetqfnMJYcH6dxIOGiSfUXmBG4uYeI9WjwrXAvz22WwjIxq4/i2F
-# f989GbhFTf4JGQaVHyT4q8fKwANUCH4xCeoe7gU81UDhhNz1btwa+ruh4YWcC2xP
-# PkHDAmEbxZALJEAfsD9eK1KXqm+BhaGCF5YwgheSBgorBgEEAYI3AwMBMYIXgjCC
+# BQAEggEArMwiF+tbf3aLbb+F0GH9N6b/Bnibk4UklDEO0reGQxyBt+61+L1wsm5t
+# uL1ZxPnpUqnBGGkTCwt4hAtNwwd3ENYN/DUZv+FlHP2cW8q8xiNw4Ndfzp54kWAq
+# 6cKi9B3tYyZzOrS7jmvV3n/73WYNjHEmsP/Cg3xTY8+qIsGYjNuTEK6FcODAjVdz
+# 90gtyLP6zjniZ2uKI7WuvYCvBBR1/cFopvkinmTYUp0A/k1UdU+BHnoSmLV3hhpu
+# pIqADNOhv6uw/OyPtra/iIDvpB7zHcwQFYYDd8RD4g6pLhyfj34a3DjS9gmUfBP8
+# M3u6U6Him3ApWjg0N20XsBIuFH5CbqGCF5YwgheSBgorBgEEAYI3AwMBMYIXgjCC
 # F34GCSqGSIb3DQEHAqCCF28wghdrAgEDMQ8wDQYJYIZIAWUDBAIBBQAwggFSBgsq
 # hkiG9w0BCRABBKCCAUEEggE9MIIBOQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFl
-# AwQCAQUABCBcal0DiZcA1ZQP9LOZfZezvCRz6BtG4/zgNZAxpGbARQIGadhSYk4+
-# GBMyMDI2MDQxMDEwMTEzOC40ODlaMASAAgH0oIHRpIHOMIHLMQswCQYDVQQGEwJV
+# AwQCAQUABCBSzRX0YylpBOwnYVkk/sLPCdt2pwHTucv3wg0edDbNpQIGadhSYk9k
+# GBMyMDI2MDQxMDEwMTE0NS40MDZaMASAAgH0oIHRpIHOMIHLMQswCQYDVQQGEwJV
 # UzETMBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UE
 # ChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMSUwIwYDVQQLExxNaWNyb3NvZnQgQW1l
 # cmljYSBPcGVyYXRpb25zMScwJQYDVQQLEx5uU2hpZWxkIFRTUyBFU046OTYwMC0w
@@ -238,22 +212,22 @@ else
 # b25kMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1p
 # Y3Jvc29mdCBUaW1lLVN0YW1wIFBDQSAyMDEwAhMzAAACJjW0PmdDk/YfAAEAAAIm
 # MA0GCWCGSAFlAwQCAQUAoIIBSjAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQw
-# LwYJKoZIhvcNAQkEMSIEIIDG3WkhIuZ2T0wOek43gzwFgxQsJrkU368mzwAhUO4s
+# LwYJKoZIhvcNAQkEMSIEIJe6H2QPC72DvuwwAvZLaxfLVbx2xE1XeLZVtoKhCre5
 # MIH6BgsqhkiG9w0BCRACLzGB6jCB5zCB5DCBvQQgzDJcYWdM2xlEGuzoY38FtXSi
 # Ro0/dUFiosWNSwWduCowgZgwgYCkfjB8MQswCQYDVQQGEwJVUzETMBEGA1UECBMK
 # V2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0
 # IENvcnBvcmF0aW9uMSYwJAYDVQQDEx1NaWNyb3NvZnQgVGltZS1TdGFtcCBQQ0Eg
 # MjAxMAITMwAAAiY1tD5nQ5P2HwABAAACJjAiBCA/kcwXw9vSvo0ykeREr0svcJMW
-# XC4NVWumDqMdYhbyADANBgkqhkiG9w0BAQsFAASCAgAnqCXhVtSSNrVaaQzKJeEe
-# qUZNFPfAxp2Lnhe4P1POt575Pofgf1PXS7rKIylLhO8EOhMVndtZNo7wGEBcDHgh
-# 52vfgWGGV9CVG5X51JNYIt/oTr+nh6dix/OiixJvEe1WKIXswv030SwdCkWE7Okh
-# /O0It4pwHKXUBzfJkrTkDR7Xcxlag7HD6IG3gKNennGeTPk/yF8iacSAnlRIMJqX
-# X7fd6l0yJsg3k3HkvpsXUW1CTYLL4glldktg/r1zyKasZMlhvpRoHk8/uYBgQKgv
-# cd9FuZpPUwp3Q9GZrBU67HJ5l73yAEpbCb4Or+i4wEEs+9Tfw4Pd8/aicmC1XZOF
-# 1qXcNuFK6jXA1bJsBdoMnn0VzuI72B5nUi3D7QWh3YixfD3wQAbeU9KehyieGOdj
-# EtMDnvJbh74k0Qm7+dc1KvoG8VlhRt3wLQFNZuh+xRjFsA/FBUFN8mqj/IlnhUen
-# 03f7MrbYRrxUNlqY+HRGyrxkk6JKwZ/U4AEA3kmy0NrxXXwA/wQ/ry11hnN+IAHU
-# srRz2vj2vLvkHdbENySEDeJdZ4D6o19T0FZOgzQP0vo97c03DTvZL31KlCayTYIj
-# afC2r/T7VLwH8bVJMn1GsLJhOcyq0Y2fav3AprJONWmybHXFN5YTxY29CzWsmTBt
-# rQuaAUPgOZGa07oFtUgisg==
+# XC4NVWumDqMdYhbyADANBgkqhkiG9w0BAQsFAASCAgBX9GdquIOC7Hirz0gfaIt/
+# 7ToHiUOaSpWoqgh9TBWwM39InsQrsyk3ym9QayiHVuk1PmMaHRqdRKCCYf2rLr/5
+# B7MjNClgWz54rfuFCMFEgF/57HMSng928RLOCjKXhC/2UqngTprtUAxqv972a1yl
+# DonB9vauxl7N+hTuZAEEZmMA2gqX1U4g7ZFAdsN/+uPdQCxDzFDQQh9Y3Po0OoJS
+# 4E+oIfZsL+VNqfK6iL+Ny4jEq9kecFT1xkqCYb3+0Q0MWR6m4SS8/tBuJLpQcvFj
+# N0jVoM/z5yU0boRTng1bFsnbUojXV5z+CBxII3Yo3McJDcAN00a6zc3xgtoK1RL4
+# zijUfM30E99ITrLzQSpY84X5F3gJKqe53cgBHlmByz8rraQmtZzLoC1IFV/SIF+z
+# WUZZPNgrYVQj21oQVj7gnYqzPtIu0k3ExIDYN7hwwXhyBTsn7fjOmH6yi+efNJCT
+# 0q3uIfGsqXN9RU+c70XXsNu6ttucFx6hcIOsKS7w2h1WbhCPinazFG3USCcKrDHB
+# KcqlM1Efi5YztoQMwe95JtuZ/2GQBbuekNv99j/5ExKI3250R2MSiuqHdr1rNK5H
+# 2qLTzruQJr8ajb4M0gJzLC8kPU5ZlzCa7Y26u4J72tPs/VuZtAQp7q58wfjTWmFE
+# nUjzAfLGrE/Ycvx2T3iFRg==
 # SIG # End signature block

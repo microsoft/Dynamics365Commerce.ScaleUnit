@@ -1,50 +1,182 @@
-<#
-.SYNOPSIS
-Checks that msbuild is available.
-#>
-Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
+. $PSScriptRoot\TableOperations.ps1
+. $PSScriptRoot\FileOperations.ps1
 
-$installInstructions = "Please download and install the x64 .Net SDK from https://dotnet.microsoft.com/en-us/download/dotnet/8.0 then restart the VS Code."
+function New-CsuExtensionPackage {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PackageName,
 
-# First check - the .NET may not be installed at all. Instruct the user to install SDK in that case.
-$dotnetPath = (get-command dotnet.exe -ErrorAction SilentlyContinue).Path
-if (-not $dotnetPath)
-{
-    Write-Host
-    Write-CustomError "Unable to find 'dotnet.exe'. $installInstructions"
-    Write-Host
-    exit 1
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PackagePublisher,
+
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PackageVersion,
+
+        [Parameter()]
+        [String]
+        $SdkVersion,
+
+        [Parameter()]
+        [ValidateSet('Valid', 'Invalid')]
+        [String]
+        $ValidationStatus,
+
+        [Parameter()]
+        [String]
+        $PackageDescription
+    )
+
+    try {
+        $body = @{
+            msprov_name       = $PackageName
+            msprov_publisher  = $PackagePublisher
+            msprov_version    = $PackageVersion
+            msprov_sdkversion = $SdkVersion
+            msprov_assettype  = 0 # CSU Extension Package
+        }
+
+        # Add optional fields if provided
+        if ($ValidationStatus) {
+            $statusValue = switch ($ValidationStatus) {
+                'Valid'   { 202570000 }
+                'Invalid' { 202570001 }
+            }
+            $body['msprov_commerceextensionasset_validationstatus'] = $statusValue
+        }
+
+        if ($PackageDescription) {
+            $body['msprov_description'] = $PackageDescription
+        }
+
+        Write-Host "Creating CSU extension package record: $PackageName ($PackageVersion)"
+
+        $recordId = New-Record -setName 'msprov_commerceextensionassets' -body $body
+
+        Write-Host "Successfully created CSU extension package record with ID: $recordId`n" -ForegroundColor Green
+        return $recordId
+    }
+    catch {
+        Write-Error "Failed to create CSU extension package record $PackageName ($PackageVersion): $($_.Exception.Message)`n"
+        throw
+    }
 }
 
-# Second check - the .NET SDK may not be installed. Instruct the user to install SDK in that case.
-$dotnetSdkPath = (& dotnet.exe --list-sdks) | Select -Last 1
-if (-not $dotnetSdkPath)
-{
-    Write-Host
-    Write-CustomError "Unable to find the .Net SDK (although the .NET Runtime is installed). $installInstructions"
-    Write-Host
-    exit 1
+function Set-CsuExtensionPackageFile {
+    param (
+        [Parameter(Mandatory)]
+        [System.Guid]
+        $PackageId,
+
+        [Parameter(Mandatory)]
+        [ValidateScript({ Test-Path $_ -PathType Leaf })]
+        [String]
+        $FilePath,
+
+        [Parameter()]
+        [String]
+        $ColumnName = 'msprov_payload'
+    )
+
+    try {
+        $fileInfo = Get-Item -Path $FilePath
+        $fileSizeMB = [Math]::Round($fileInfo.Length / 1MB, 2)
+
+        Write-Host "Uploading CSU extension package file: $($fileInfo.Name) ($fileSizeMB MB)"
+
+        Set-FileColumnInChunks -setName 'msprov_commerceextensionassets' `
+            -id $PackageId `
+            -columnName $ColumnName `
+            -file $fileInfo
+
+        Write-Host "Successfully uploaded CSU extension package file to record: $PackageId`n" -ForegroundColor Green
+    }
+    catch {
+        Write-Error "Failed to upload CSU extension package file: $($_.Exception.Message)`n"
+        throw
+    }
 }
 
-$sdkVersionString = (dotnet --list-sdks | Select-String '(\d+\.)+\d+' | select -ExpandProperty Matches | select -ExpandProperty Value | Measure-Object -Maximum | Select-Object -expand Maximum)
+function Get-CsuExtensionPackage {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PackageName,
 
-$sdkVersion = [Version]::new($sdkVersionString)
-if ($sdkVersion.Major -lt 3) 
-{
-    Write-Host
-    Write-CustomError "The most recent installed .Net SDK version $sdkVersionString is too old. $installInstructions"
-    Write-Host
-    exit 1   
+        [Parameter(Mandatory)]
+        [ValidateNotNullOrEmpty()]
+        [String]
+        $PackageVersion
+    )
+
+    try {
+        Write-Host "Querying CSU extension package: $PackageName ($PackageVersion)"
+
+        $escapedPackageName = $PackageName.Replace("'", "''")
+        $escapedPackageVersion = $PackageVersion.Replace("'", "''")
+        $filter = "?`$filter=msprov_name eq '$escapedPackageName' and msprov_version eq '$escapedPackageVersion' and msprov_assettype eq 0"
+        $response = Get-Records -setName 'msprov_commerceextensionassets' -query $filter
+
+        $records = $response.value
+
+        if (-not $records -or $records.Count -eq 0) {
+            Write-Host "No CSU extension package found: $PackageName ($PackageVersion)" -ForegroundColor Yellow
+            return $null
+        }
+
+        Write-Host "Found $($records.Count) CSU extension package record(s): $PackageName ($PackageVersion)`n" -ForegroundColor Green
+        return $records
+    }
+    catch {
+        Write-Error "Failed to query CSU extension package $PackageName ($PackageVersion): $($_.Exception.Message)`n"
+        throw
+    }
 }
-else
-{
-    Write-Host "Current version of .NET SDK is '$sdkVersionString'."
+
+function Get-CsuExtensionPackageFile {
+    param (
+        [Parameter(Mandatory)]
+        [System.Guid]
+        $PackageId,
+
+        [Parameter(Mandatory)]
+        [ValidateScript({ Test-Path $_ -PathType Container })]
+        [String]
+        $OutputDirectory,
+
+        [Parameter()]
+        [String]
+        $ColumnName = 'msprov_payload'
+    )
+
+    try {
+        Write-Host "Downloading CSU extension package file from record: $PackageId"
+
+        $file = Get-FileColumnInChunks -setName 'msprov_commerceextensionassets' `
+            -id $PackageId `
+            -columnName $ColumnName `
+            -outputDirectory $OutputDirectory
+
+        Write-Host "Successfully downloaded CSU extension package file: $($file.Name)`n" -ForegroundColor Green
+        return $file
+    }
+    catch {
+        Write-Error "Failed to download CSU extension package file: $($_.Exception.Message)`n"
+        throw
+    }
 }
+
 # SIG # Begin signature block
 # MIIoLAYJKoZIhvcNAQcCoIIoHTCCKBkCAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAeO9t3hCmnVB3+
-# Xs+85IyLzRqTQbXtfUncEuK4cHzBK6CCDXYwggX0MIID3KADAgECAhMzAAAEhV6Z
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCCkH0lDp4vhyVxg
+# HqQpKbs8RRWIikHX+xG/HV6lxe2g+KCCDXYwggX0MIID3KADAgECAhMzAAAEhV6Z
 # 7A5ZL83XAAAAAASFMA0GCSqGSIb3DQEBCwUAMH4xCzAJBgNVBAYTAlVTMRMwEQYD
 # VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
 # b3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNpZ25p
@@ -121,19 +253,19 @@ else
 # aWNyb3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNp
 # Z25pbmcgUENBIDIwMTECEzMAAASFXpnsDlkvzdcAAAAABIUwDQYJYIZIAWUDBAIB
 # BQCgga4wGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEO
-# MAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIEIGEHfDosR11g0nwFnY6YBmkG
-# r5UiEs1oiMbBsi872WivMEIGCisGAQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8A
+# MAwGCisGAQQBgjcCARUwLwYJKoZIhvcNAQkEMSIEIEmTHlnvA3iWfg047E+x1uVZ
+# orkKLLnmEix29tMQH/fnMEIGCisGAQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8A
 # cwBvAGYAdKEagBhodHRwOi8vd3d3Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEB
-# BQAEggEAYUGYnMbiALcubVimPnjxhLO/Jacq9ye8t0JphuecIOlC0dm1OvLB6rht
-# YdxDiOEJMiWRz65Bk6kkCAmHxmsW0Nt8bx/u3L6FBaTJsEM2dCD3DON2jIuE9+DM
-# xrbmyI4l6lG1tOzHH2Z0pESTDu+R8IDpAR8q3gYimpm6zAkTiftbiitU01jUmvSE
-# IwfGQ1xWkCrVHetqfnMJYcH6dxIOGiSfUXmBG4uYeI9WjwrXAvz22WwjIxq4/i2F
-# f989GbhFTf4JGQaVHyT4q8fKwANUCH4xCeoe7gU81UDhhNz1btwa+ruh4YWcC2xP
-# PkHDAmEbxZALJEAfsD9eK1KXqm+BhaGCF5YwgheSBgorBgEEAYI3AwMBMYIXgjCC
+# BQAEggEAUPfyGsvzTqehed0NS4DpAKzho9YocNeoNTyrh+Gjk+Gwzij9tdVHc+jV
+# vbQbfFGzJYWuhfM+uFkoldN+QauBxoHVqobl72NjGxm8vIdtaXM/icUVgFjzFy20
+# k6xPPFPY3EgBTMlMSV1z8a0SHqhccFZswuv4AXB9gcDhnenSwoi/sKG9Tb8S5YhF
+# n2dLeIvD+6PeKYCdXzAU8lslBspQad/d0h5yWhe2WmS97IsCBbUVf2jX9qaO4uEe
+# El1IhX/AcrcPUMPG2+Ti7DCthLWpDFq0FrxUb4oCuKgLyu6P+wyxdmNbBwdEsLE3
+# Ib2/KRQxRaM6vSAmIClLPh493I3UAaGCF5YwgheSBgorBgEEAYI3AwMBMYIXgjCC
 # F34GCSqGSIb3DQEHAqCCF28wghdrAgEDMQ8wDQYJYIZIAWUDBAIBBQAwggFSBgsq
 # hkiG9w0BCRABBKCCAUEEggE9MIIBOQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFl
-# AwQCAQUABCBcal0DiZcA1ZQP9LOZfZezvCRz6BtG4/zgNZAxpGbARQIGadhSYk4+
-# GBMyMDI2MDQxMDEwMTEzOC40ODlaMASAAgH0oIHRpIHOMIHLMQswCQYDVQQGEwJV
+# AwQCAQUABCAylyb/1EE7wmi2GxZcvP6Uw6cPBJsriis18/ZztzBt0QIGadhSYk8c
+# GBMyMDI2MDQxMDEwMTE0My43NTZaMASAAgH0oIHRpIHOMIHLMQswCQYDVQQGEwJV
 # UzETMBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UE
 # ChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMSUwIwYDVQQLExxNaWNyb3NvZnQgQW1l
 # cmljYSBPcGVyYXRpb25zMScwJQYDVQQLEx5uU2hpZWxkIFRTUyBFU046OTYwMC0w
@@ -238,22 +370,22 @@ else
 # b25kMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1p
 # Y3Jvc29mdCBUaW1lLVN0YW1wIFBDQSAyMDEwAhMzAAACJjW0PmdDk/YfAAEAAAIm
 # MA0GCWCGSAFlAwQCAQUAoIIBSjAaBgkqhkiG9w0BCQMxDQYLKoZIhvcNAQkQAQQw
-# LwYJKoZIhvcNAQkEMSIEIIDG3WkhIuZ2T0wOek43gzwFgxQsJrkU368mzwAhUO4s
+# LwYJKoZIhvcNAQkEMSIEIGtTgZLBbhL82J0ncWv65rpNRKz1cK83NUFZYX2Hmcf3
 # MIH6BgsqhkiG9w0BCRACLzGB6jCB5zCB5DCBvQQgzDJcYWdM2xlEGuzoY38FtXSi
 # Ro0/dUFiosWNSwWduCowgZgwgYCkfjB8MQswCQYDVQQGEwJVUzETMBEGA1UECBMK
 # V2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0
 # IENvcnBvcmF0aW9uMSYwJAYDVQQDEx1NaWNyb3NvZnQgVGltZS1TdGFtcCBQQ0Eg
 # MjAxMAITMwAAAiY1tD5nQ5P2HwABAAACJjAiBCA/kcwXw9vSvo0ykeREr0svcJMW
-# XC4NVWumDqMdYhbyADANBgkqhkiG9w0BAQsFAASCAgAnqCXhVtSSNrVaaQzKJeEe
-# qUZNFPfAxp2Lnhe4P1POt575Pofgf1PXS7rKIylLhO8EOhMVndtZNo7wGEBcDHgh
-# 52vfgWGGV9CVG5X51JNYIt/oTr+nh6dix/OiixJvEe1WKIXswv030SwdCkWE7Okh
-# /O0It4pwHKXUBzfJkrTkDR7Xcxlag7HD6IG3gKNennGeTPk/yF8iacSAnlRIMJqX
-# X7fd6l0yJsg3k3HkvpsXUW1CTYLL4glldktg/r1zyKasZMlhvpRoHk8/uYBgQKgv
-# cd9FuZpPUwp3Q9GZrBU67HJ5l73yAEpbCb4Or+i4wEEs+9Tfw4Pd8/aicmC1XZOF
-# 1qXcNuFK6jXA1bJsBdoMnn0VzuI72B5nUi3D7QWh3YixfD3wQAbeU9KehyieGOdj
-# EtMDnvJbh74k0Qm7+dc1KvoG8VlhRt3wLQFNZuh+xRjFsA/FBUFN8mqj/IlnhUen
-# 03f7MrbYRrxUNlqY+HRGyrxkk6JKwZ/U4AEA3kmy0NrxXXwA/wQ/ry11hnN+IAHU
-# srRz2vj2vLvkHdbENySEDeJdZ4D6o19T0FZOgzQP0vo97c03DTvZL31KlCayTYIj
-# afC2r/T7VLwH8bVJMn1GsLJhOcyq0Y2fav3AprJONWmybHXFN5YTxY29CzWsmTBt
-# rQuaAUPgOZGa07oFtUgisg==
+# XC4NVWumDqMdYhbyADANBgkqhkiG9w0BAQsFAASCAgB7ZwHqr6+6vr2z83/dxlNu
+# GFzrVezo/sZ885NB/mPGCdoABH6ofqTzi0RoypKqFYeR+htFIKnL2HWkvUOSBkP5
+# rRfCq88sm7fHHkqGjyThYwf/E7s/VOQhjP+zwAKtA1VL5ej5XH+7u2Bgqse1nD7w
+# tm81+lVLXq+pkfXIvIg0hh6kraiMTQnowv3HtII9+KJgCwX0rmUIixOkwJ1g96WI
+# qew5YPZWxsw6qAunEZWyYTEyKvBXJrGHY/fjXhN6vnaD4ZGQLt5cz+fPH6gr2DJ/
+# bYBPjTUGJ+RwcXol3AGi4fGESYM+c7Y5xVXfj3eGDJvNpeFAstII38upJGYFbltC
+# k0R/1MwIWJiN/jHwK3FO+aXJ1ASPK/EypX9iDeItBNjVu6hetOZvDtrymzvaP+ng
+# FWMu40CLrfCGDE2vqugVtHifeJZcDcl/K8/1hn9lussDaGb99/YGQ34GiI9dVle4
+# b8igaaw8idWQKO4N5LnHHkh89KZvHj0pHA7owhAwmDppDpGCxCimo/uvrZmm+uTq
+# qioqtf+v4KC4G2OFo72+cBqLltosLfi8gpCW826C00EJs8HIhWRGhWb2qFcDbgZ2
+# 1p5/IsnsemCR02xMjLfoKUfTB8uvtjZUQ9ufn4bvixmXNg/Nf7ntJtVEbG8d865u
+# uimN5n7U5gHd+ks2gFR6uQ==
 # SIG # End signature block
