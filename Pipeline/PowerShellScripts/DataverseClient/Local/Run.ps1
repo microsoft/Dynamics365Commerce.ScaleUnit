@@ -1,43 +1,139 @@
 <#
 .SYNOPSIS
-Ensure that nuget authentication is working.
+    CLI entry point for local CSU extension package operations.
+
+.DESCRIPTION
+    Provides a unified command-line interface for uploading and downloading
+    CSU extension packages to/from Dataverse. Configure Local.vars.ps1 before use.
+
+.PARAMETER Command
+    The operation to perform: 'upload' or 'download'.
+
+.PARAMETER PackageName
+    (download only) The name of the CSU extension package to download.
+
+.PARAMETER PackageVersion
+    (download only) The version of the CSU extension package to download.
+
+.PARAMETER Help
+    Show detailed help and usage examples.
+
+.EXAMPLE
+    .\Run.ps1 upload
+
+.EXAMPLE
+    .\Run.ps1 download -PackageName "Contoso.Commerce" -PackageVersion "1.0.0"
+
+.EXAMPLE
+    .\Run.ps1 --help
 #>
-Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
+param (
+    [Parameter(Position = 0)]
+    [ValidateSet('upload', 'download')]
+    [String]
+    $Command,
 
-$pluginsRoot = Join-Path (Join-Path $env:USERPROFILE ".nuget") "plugins"
-$pluginDirectory = Join-Path pluginsRoot "CredentialProvider.Microsoft"
+    [Parameter()]
+    [String]
+    $PackageName,
 
-# Some nuget feeds may require authentication. The authentication is conducted via the nuget plugin
-# that must be installed either automatically or manually.
-# Certain environments may not allow downloading this plugin's binaries.
-# Although it is not a problem when the public git repository is used (no authentication is needed there),
-# the internal development or testing efforts may meet a certain problem at this point.
-# One possible workaround is to invoke the "nuget restore" command that will automatically show
-# the authentication dialog and wait for its completion.
+    [Parameter()]
+    [String]
+    $PackageVersion,
 
-# Check if the 'artifacts-credprovider' plugin is installed. 
-if (-not (Test-Path -Path $pluginDirectory))
-{
-    if (Get-Command "nuget.exe" -ErrorAction SilentlyContinue) 
-    {
-        # This will show the authentication dialog for the feeds requiring the authentication.
-        & nuget restore
+    [Parameter()]
+    [Alias('h', '?')]
+    [Switch]
+    $Help
+)
+
+$ErrorActionPreference = 'Stop'
+
+function Show-Help {
+    $help = @"
+
+CSU Extension Package CLI
+=========================
+
+Usage:  .\Run.ps1 <command> [options]
+
+Commands:
+
+  upload      Upload a CSU extension package to Dataverse.
+              The package path is set via ExtensionPackagePath in Local.vars.ps1.
+              If not set, defaults to the build output folder.
+              Package name and version are read from manifest.json inside the
+              package. The name + version pair must be unique per environment -
+              bump the version in manifest.json before re-uploading.
+
+  download    Download a CSU extension package from Dataverse.
+              Use -PackageName and -PackageVersion to specify which package.
+              The file is saved to OutputDirectory in Local.vars.ps1
+              (defaults to your Downloads folder).
+
+Options:
+  -Help, -h   Show this help message.
+
+Getting Started:
+  1. Open Local.vars.ps1 and fill in TenantId and DataverseEnvironmentUrl.
+  2. Set UseUserSignIn to `$true (recommended) or configure app credentials.
+  3. Run one of the commands below.
+
+Examples:
+  .\Run.ps1 upload
+  .\Run.ps1 download -PackageName "Contoso.Commerce" -PackageVersion "1.0.0.0"
+
+"@
+    Write-Host $help
+}
+
+# Show help if requested or no command given.
+if ($Help -or [string]::IsNullOrWhiteSpace($Command)) {
+    Show-Help
+    return
+}
+
+# Validate configuration.
+. $PSScriptRoot\Local.vars.ps1
+
+$missing = @()
+if ([string]::IsNullOrWhiteSpace($TenantId))                { $missing += 'TenantId' }
+if ([string]::IsNullOrWhiteSpace($DataverseEnvironmentUrl))  { $missing += 'DataverseEnvironmentUrl' }
+if ($missing) {
+    Write-Host "`nPlease set the following in Local.vars.ps1 before running:" -ForegroundColor Red
+    $missing | ForEach-Object { Write-Host "  - $_" -ForegroundColor Red }
+    Write-Host "`nFile: $PSScriptRoot\Local.vars.ps1`n"
+    return
+}
+
+# Prompt for command-specific parameters if not provided.
+if ($Command -eq 'download') {
+    if ([string]::IsNullOrWhiteSpace($PackageName)) {
+        $PackageName = Read-Host 'Enter the package name to download'
+        if ([string]::IsNullOrWhiteSpace($PackageName)) { throw 'PackageName is required for download.' }
     }
-    else
-    {
-        Write-Warning "Both the 'artifacts-credprovider' plugin and the 'nuget.exe' command line utility were not found on the system. This may lead to the problems during the restoring of nuget packages from the 'https://msazure.pkgs.visualstudio.com/D365/_packaging/Dynamics365Commerce-Consumption' feed."
+    if ([string]::IsNullOrWhiteSpace($PackageVersion)) {
+        $PackageVersion = Read-Host 'Enter the package version to download'
+        if ([string]::IsNullOrWhiteSpace($PackageVersion)) { throw 'PackageVersion is required for download.' }
     }
 }
-else
-{
-    Write-Host "The 'artifacts-credprovider' plugin is already installed in '$pluginDirectory'."
+
+switch ($Command) {
+    'upload' {
+        & $PSScriptRoot\Local.UploadExtensionPackage.ps1
+    }
+    'download' {
+        & $PSScriptRoot\Local.DownloadExtensionPackage.ps1 `
+            -PackageName $PackageName `
+            -PackageVersion $PackageVersion
+    }
 }
 
 # SIG # Begin signature block
 # MIIncQYJKoZIhvcNAQcCoIInYjCCJ14CAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCD/nT5m0HBzfJ4p
-# bDhF4MdZsQzlPQEnFGCELCgNgptg16CCDMkwggYEMIID7KADAgECAhMzAAACHPrN
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDqbqvq5rsaFn2l
+# +zHEbWyYYvkL5VyLqe+LdJ1Yl40euqCCDMkwggYEMIID7KADAgECAhMzAAACHPrN
 # xZvoL37EAAAAAAIcMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNVBAYTAlVTMR4wHAYD
 # VQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBD
 # b2RlIFNpZ25pbmcgUENBIDIwMjQwHhcNMjYwNDE2MTg1OTQxWhcNMjcwNDE1MTg1
@@ -110,62 +206,62 @@ else
 # KDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNpZ25pbmcgUENBIDIwMjQCEzMAAAIc
 # +s3Fm+gvfsQAAAAAAhwwDQYJYIZIAWUDBAIBBQCgga4wGQYJKoZIhvcNAQkDMQwG
 # CisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwLwYJKoZI
-# hvcNAQkEMSIEIMi/atBJGmWoUkxJV9AT5QjyB3laZflopZBBhyg4JGvCMEIGCisG
+# hvcNAQkEMSIEIHOzdhZNektNXIsyABzoQEpYGRzfc8xQ5BDUesN6bmGXMEIGCisG
 # AQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8AcwBvAGYAdKEagBhodHRwOi8vd3d3
-# Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEBBQAEggEAygHmOwqhzuFKgTDZAS8O
-# /M05YfW0Z84GM5gFUh0ZjXTQZN5k5E7B1+X9sQc7BEps464X6Gk6mXGmOjO6nWVx
-# QPbDAjEBqvJfeDSa90erSOJBM7sUinXRgsF6zff2ZA6H7PZW+Y6wMGPpPfNKUsGF
-# 6wObdUADRQEf/hq+zOzcFiW5hByxnykhC+8CyafewroRYQmHYiPWCfwWTY/MTqCm
-# odB71H2trjLvxE/J1gY95Tnzejw/WiFhE4ziLTtHhNqEjjB83QeZx0/RXzpZ02OO
-# Hb+JyWwoKPuk3fnTxMPbFQfOqiftmXxYba9FZKyLSXXiBFi15kb3+xh1lN7iu7qf
-# VqGCF7AwghesBgorBgEEAYI3AwMBMYIXnDCCF5gGCSqGSIb3DQEHAqCCF4kwgheF
+# Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEBBQAEggEADAFW+p6z2uXgaDUmUqH1
+# nMUwBSPFCOK92R1r8Pbs48zKJpwXitV1VWXDtHj99iWoxtqN1pIo5izHkdALhGz1
+# Zq68TQpI1aE6Kphu9SfwCGT4we53MliCgsPdMABhZt6D0JVf0rZJPmmipxgntLEx
+# leWJGs3G3fmrohelnnsR1VA6PSiH8bw6rE6zdk7Mi1dtUs2POXXvm/tCByycTESW
+# OI8zHxRiPNf/XkKMmsrvWxVKoasPMTqFjjnRMajyShVsMFErH3KA1Tusl9C+5LhL
+# nY91G4jXKjZWzlDpKHDYxJAedr3eu/qhodFZY0yPR4euk3qrgY9C5BvGvfCUaTt1
+# oaGCF7AwghesBgorBgEEAYI3AwMBMYIXnDCCF5gGCSqGSIb3DQEHAqCCF4kwgheF
 # AgEDMQ8wDQYJYIZIAWUDBAIBBQAwggFaBgsqhkiG9w0BCRABBKCCAUkEggFFMIIB
-# QQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFlAwQCAQUABCCxggDzzKNaKwM/mJl3
-# 6cd7rj9WLaXskaNGfO9REqv7KgIGaeuf7TqQGBMyMDI2MDUwMTA2MzExOC4yMTla
+# QQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFlAwQCAQUABCCsBz4XboyBmzA1kvnX
+# y2PbarISUmzYxLhD4LFgUsudEQIGaexu7k0DGBMyMDI2MDUwMTA2MzExNi4zNzRa
 # MASAAgH0oIHZpIHWMIHTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3Rv
 # bjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0
 # aW9uMS0wKwYDVQQLEyRNaWNyb3NvZnQgSXJlbGFuZCBPcGVyYXRpb25zIExpbWl0
-# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjoyQTFBLTA1RTAtRDk0NzElMCMG
+# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjo2NTFBLTA1RTAtRDk0NzElMCMG
 # A1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2VydmljZaCCEf4wggcoMIIFEKAD
-# AgECAhMzAAACEKvN5BYY7zmwAAEAAAIQMA0GCSqGSIb3DQEBCwUAMHwxCzAJBgNV
+# AgECAhMzAAACFRgD04EHJnxTAAEAAAIVMA0GCSqGSIb3DQEBCwUAMHwxCzAJBgNV
 # BAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4w
 # HAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29m
-# dCBUaW1lLVN0YW1wIFBDQSAyMDEwMB4XDTI1MDgxNDE4NDgxMloXDTI2MTExMzE4
-# NDgxMlowgdMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYD
+# dCBUaW1lLVN0YW1wIFBDQSAyMDEwMB4XDTI1MDgxNDE4NDgyMFoXDTI2MTExMzE4
+# NDgyMFowgdMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYD
 # VQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xLTAr
 # BgNVBAsTJE1pY3Jvc29mdCBJcmVsYW5kIE9wZXJhdGlvbnMgTGltaXRlZDEnMCUG
-# A1UECxMeblNoaWVsZCBUU1MgRVNOOjJBMUEtMDVFMC1EOTQ3MSUwIwYDVQQDExxN
+# A1UECxMeblNoaWVsZCBUU1MgRVNOOjY1MUEtMDVFMC1EOTQ3MSUwIwYDVQQDExxN
 # aWNyb3NvZnQgVGltZS1TdGFtcCBTZXJ2aWNlMIICIjANBgkqhkiG9w0BAQEFAAOC
-# Ag8AMIICCgKCAgEAjcc4q057ZwIgpKu4pTXWLejvYEduRf+1mIpbiJEMFWWmU2xp
-# ip+zK7xFxKGB1CclUXBU0/ZQZ6LG8H0gI7yvosrsPEI1DPB/XccGCvswKbAKckng
-# OuGTEPGk7K/vEZa9h0Xt02b7m2n9MdIjkLrFl0pDriKyz0QHGpdh93X6+NApfE1T
-# L24Vo0xkeoFGpL3rX9gXhIOF59EMnTd2o45FW/oxMgY9q0y0jGO0HrCLTCZr50e7
-# TZRSNYAy2lyKbvKI2MKlN1wLzJvZbbc//L3s1q3J6KhS0KC2VNEImYdFgVkJej4z
-# ZqHfScTbx9hjFgFpVkJl4xH5VJ8tyJdXE9+vU0k9AaT2QP1Zm3WQmXedSoLjjI7L
-# WznuHwnoGIXLiJMQzPqKqRIFL3wzcrDrZeWgtAdBPbipglZ5CQns6Baj5Mb6a/EZ
-# C9G3faJYK5QVHeE6eLoSEwp1dz5WurLXNPsp0VWplpl/FJb8jrRT/jOoHu85qRcd
-# YpgByU9W7IWPdrthmyfqeAw0omVWN5JxcogYbLo2pANJHlsMdWnxIpN5YwHbGEPC
-# uosBHPk2Xd9+E/pZPQUR6v+D85eEN5A/ZM/xiPpxa8dJZ87BpTvui7/2uflUMJf2
-# Yc9ZLPgEdhQQo0LwMDSTDT48y3sV7Pdo+g5q+MqnJztN/6qt1cgUTe9u+ykCAwEA
-# AaOCAUkwggFFMB0GA1UdDgQWBBSe42+FrpdF2avbUhlk86BLSH5kejAfBgNVHSME
+# Ag8AMIICCgKCAgEAw3HV3hVxL0lEYPV03XeNKZ517VIbgexhlDPdpXwDS0BYtxPw
+# i4XYpZR1ld0u6cr2Xjuugdg50DUx5WHL0QhY2d9vkJSk02rE/75hcKt91m2Ih287
+# QRxRMmFu3BF6466k8qp5uXtfe6uciq49YaS8p+dzv3uTarD4hQ8UT7La95pOJiRq
+# xxd0qOGLECvHLEXPXioNSx9pyhzhm6lt7ezLxJeFVYtxShkavPoZN0dOCiYeh4Kg
+# oKoyagzMuSiLCiMUW4Ue4Qsm658FJNGTNh7V5qXYVA6k5xjw5WeWdKOz0i9A5jBc
+# bY9fVOo/cA8i1bytzcDTxb3nctcly8/OYeNstkab/Isq3Cxe1vq96fIHE1+ZGmJj
+# ka1sodwqPycVp/2tb+BjulPL5D6rgUXTPF84U82RLKHV57bB8fHRpgnjcWBQuXPg
+# VeSXpERWimt0NF2lCOLzqgrvS/vYqde5Ln9YlKKhAZ/xDE0TLIIr6+I/2JTtXP34
+# nfjTENVqMBISWcakIxAwGb3RB5yHCxynIFNVLcfKAsEdC5U2em0fAvmVv0sonqnv
+# 17cuaYi2eCLWhoK1Ic85Dw7s/lhcXrBpY4n/Rl5l3wHzs4vOIhu87DIy5QUaEupE
+# syY0NWqgI4BWl6v1wgse+l8DWFeUXofhUuCgVTuTHN3K8idoMbn8Q3edUIECAwEA
+# AaOCAUkwggFFMB0GA1UdDgQWBBSJIXfxcqAwFqGj9jdwQtdSqadj1zAfBgNVHSME
 # GDAWgBSfpxVdAF5iXYP05dJlpxtTNRnpcjBfBgNVHR8EWDBWMFSgUqBQhk5odHRw
 # Oi8vd3d3Lm1pY3Jvc29mdC5jb20vcGtpb3BzL2NybC9NaWNyb3NvZnQlMjBUaW1l
 # LVN0YW1wJTIwUENBJTIwMjAxMCgxKS5jcmwwbAYIKwYBBQUHAQEEYDBeMFwGCCsG
 # AQUFBzAChlBodHRwOi8vd3d3Lm1pY3Jvc29mdC5jb20vcGtpb3BzL2NlcnRzL01p
 # Y3Jvc29mdCUyMFRpbWUtU3RhbXAlMjBQQ0ElMjAyMDEwKDEpLmNydDAMBgNVHRMB
 # Af8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMA4GA1UdDwEB/wQEAwIHgDAN
-# BgkqhkiG9w0BAQsFAAOCAgEAvs4rO3oo8czOrxPqnnSEkUVq718QzlrIiy7/EW7J
-# mQXsJoFxHWUF0Ux0PDyKFDRXPJVv29F7kpJkBJJmcQg5HQV7blUXIMWQ1qX0KdtF
-# QXI/MRL77Z+pK5x1jX+tbRkA7a5Ft7vWuRoAEi02HpFH5m/Akh/dfsbx8wOpecJb
-# YvuHuy4aG0/tGzOWFCxMMNhGAIJ4qdV87JnY/uMBmiodlm+Gz357XWW5tg3HrtNZ
-# XuQ0tWUv26ud4nGKJo/oLZHP75p4Rpt7dMdYKUF9AuVFBwxYZYpvgk12tfK+/yOw
-# q84/fjXVCdM83Qnawtbenbk/lnbc9KsZom+GnvA4itAMUpSXFWrcRkqdUQLN+JrG
-# 6fPBoV8+D8U2Q2F4XkiCR6EU9JzYKwTuvL6t3nFuxnkLdNjbTg2/yv2j3WaDuCK5
-# lSPgsndIiH6Bku2Ui3A0aUo6D9z9v+XEuBs9ioVJaOjf/z+Urqg7ESnxG0/T1dKc
-# i7vLQ2XNgWFYO+/OlDjtGoma1ijX4m14N9qgrXTuWEGwgC7hhBgp3id/LAOf9BST
-# WA5lBrilsEoexXBrOn/1wM3rjG0hIsxvF5/YOK78mVRGY6Y7zYJ+uXt4OTOFBwad
-# Pv8MklreQZLPnQPtiwop4rlLUYaPCiD4YUqRNbLp8Sgyo9g0iAcZYznTuc+8Q8ZI
-# rgwwggdxMIIFWaADAgECAhMzAAAAFcXna54Cm0mZAAAAAAAVMA0GCSqGSIb3DQEB
+# BgkqhkiG9w0BAQsFAAOCAgEAd42HtV+kGbvxzLBTC5O7vkCIBPy/BwpjCzeL53hA
+# iEOebp+VdNnwm9GVCfYq3KMfrj4UvKQTUAaS5Zkwe1gvZ3ljSSnCOyS5OwNu9dpg
+# 3ww+QW2eOcSLkyVAWFrLn6Iig3TC/zWMvVhqXtdFhG2KJ1lSbN222csY3E3/BrGl
+# uAlvET9gmxVyyxNy59/7JF5zIGcJibydxs94JL1BtPgXJOfZzQ+/3iTc6eDtmaWT
+# 6DKdnJocp8wkXKWPIsBEfkD6k1Qitwvt0mHrORah75SjecOKt4oWayVLkPTho12e
+# 0ongEg1cje5fxSZGthrMrWKvI4R7HEC7k8maH9ePA3ViH0CVSSOefaPTGMzIhHCo
+# 5p3jG5SMcyO3eA9uEaYQJITJlLG3BwwGmypY7C/8/nj1SOhgx1HgJ0ywOJL9xfP4
+# AOcWmCfbsqgGbCaC7WH5sINdzfMar8V7YNFqkbCGUKhc8GpIyE+MKnyVn33jsuaG
+# AlNRg7dVRUSoYLJxvUsw9GOwyBpBwbE9sqOLm+HsO00oF23PMio7WFXcFTZAjp3u
+# jihBAfLrXICgGOHPdkZ042u1LZqOcnlr3XzvgMe+mPPyasW8f0rtzJj3V5E/EKiy
+# QlPxj9Mfq2x9himnlXWGZCVPeEBROrNbDYBfazTyLNCOTsRtksOSV3FBtPnpQtLN
+# 754wggdxMIIFWaADAgECAhMzAAAAFcXna54Cm0mZAAAAAAAVMA0GCSqGSIb3DQEB
 # CwUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UE
 # BxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMTIwMAYD
 # VQQDEylNaWNyb3NvZnQgUm9vdCBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkgMjAxMDAe
@@ -208,41 +304,41 @@ else
 # AQEwggEBoYHZpIHWMIHTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3Rv
 # bjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0
 # aW9uMS0wKwYDVQQLEyRNaWNyb3NvZnQgSXJlbGFuZCBPcGVyYXRpb25zIExpbWl0
-# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjoyQTFBLTA1RTAtRDk0NzElMCMG
+# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjo2NTFBLTA1RTAtRDk0NzElMCMG
 # A1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2VydmljZaIjCgEBMAcGBSsOAwIa
-# AxUAOsyf2b6riPKnnXlIgIL2f53PUsKggYMwgYCkfjB8MQswCQYDVQQGEwJVUzET
+# AxUAj6eTejbuYE1Ifjbfrt6tXevCUSCggYMwgYCkfjB8MQswCQYDVQQGEwJVUzET
 # MBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMV
 # TWljcm9zb2Z0IENvcnBvcmF0aW9uMSYwJAYDVQQDEx1NaWNyb3NvZnQgVGltZS1T
-# dGFtcCBQQ0EgMjAxMDANBgkqhkiG9w0BAQsFAAIFAO2er7gwIhgPMjAyNjA1MDEw
-# NDUxMDRaGA8yMDI2MDUwMjA0NTEwNFowdzA9BgorBgEEAYRZCgQBMS8wLTAKAgUA
-# 7Z6vuAIBADAKAgEAAgIBHQIB/zAHAgEAAgIS2DAKAgUA7aABOAIBADA2BgorBgEE
+# dGFtcCBQQ0EgMjAxMDANBgkqhkiG9w0BAQsFAAIFAO2eLUUwIhgPMjAyNjA0MzAx
+# OTM0MjlaGA8yMDI2MDUwMTE5MzQyOVowdzA9BgorBgEEAYRZCgQBMS8wLTAKAgUA
+# 7Z4tRQIBADAKAgEAAgIe0wIB/zAHAgEAAgISVjAKAgUA7Z9+xQIBADA2BgorBgEE
 # AYRZCgQCMSgwJjAMBgorBgEEAYRZCgMCoAowCAIBAAIDB6EgoQowCAIBAAIDAYag
-# MA0GCSqGSIb3DQEBCwUAA4IBAQBuEZ8aM/PpWq2EEOpxpriVJ5bRiDMeQmQ1TIqK
-# KqdohoCuA3MD+YY2hVRy7oLS793BrnZF7IOHv71K7mHXepTHk5GhJO2D2Yx3y0Tg
-# 8IteWdpror4ZHmoRL6crjj4Njn4pkzIGchfpUml4EETAcAKAPryj5PNda7//N6eR
-# diVfwhLaanVQMGhkEO9Bdxu7V70Hjboh3vCTDGZ+xHETvaK1aONVQgJnsvXnpVQO
-# C+HI5RD4mU2aKTCL+eLAEdwlIXEMywhvP57bzO2w0tYj8qDFsCoZQXPQwvGDWaAu
-# UFhcLGhmjrFwkndnohQnNuiA947PwFT2CdUzlmzlekBoSgB2MYIEDTCCBAkCAQEw
+# MA0GCSqGSIb3DQEBCwUAA4IBAQCxdw6pMKoAnpxno9YJifymWMy/rKoEvYZTU+98
+# l+Hpm6TqodAXVTwQIvf3PL3aDYVpvzwkG48btNOc0UnuVFDTtGU16igtRcEbTb0/
+# HJb/0KN2/ZO2iCZJGeGgqnZfwR/not9cXcpZwPeuKsWV/WgB2K1mQCCimGpmYeHJ
+# AeaQnqQcU1Lvl6AsLLZ4mpNt4JkIydwBo0RLcxG9i/+0oe+g4+bKsiyPHUdxjmIV
+# y86sJ8SzC0GDz8pR774wzLYgCK+DXaLJ1AdlfIo5LT2q4s+QHVSpfvXxBmxGcDgW
+# PEcDWUYtJJoySrLcq2hKPh3DvcQVHik6RgBrbUSstCUtitXRMYIEDTCCBAkCAQEw
 # gZMwfDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcT
 # B1JlZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjEmMCQGA1UE
-# AxMdTWljcm9zb2Z0IFRpbWUtU3RhbXAgUENBIDIwMTACEzMAAAIQq83kFhjvObAA
-# AQAAAhAwDQYJYIZIAWUDBAIBBQCgggFKMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0B
-# CRABBDAvBgkqhkiG9w0BCQQxIgQgjHnOm8qt06iyQtJPuqFxY3RnrpFgbxMHJ8Hb
-# ZB2fCNgwgfoGCyqGSIb3DQEJEAIvMYHqMIHnMIHkMIG9BCDD1SHufsjzY59S1iHU
-# QY9hnsKSrJPg5a9Mc4YnGmPHxjCBmDCBgKR+MHwxCzAJBgNVBAYTAlVTMRMwEQYD
+# AxMdTWljcm9zb2Z0IFRpbWUtU3RhbXAgUENBIDIwMTACEzMAAAIVGAPTgQcmfFMA
+# AQAAAhUwDQYJYIZIAWUDBAIBBQCgggFKMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0B
+# CRABBDAvBgkqhkiG9w0BCQQxIgQg7fi9Gj5KkHhtC8WzaraYOIJgzxu7hDsoueRA
+# r/SZLEwwgfoGCyqGSIb3DQEJEAIvMYHqMIHnMIHkMIG9BCBwEPR2PDrTFLcrtQsK
+# rUi7oz5JNRCF/KRHMihSNe7sijCBmDCBgKR+MHwxCzAJBgNVBAYTAlVTMRMwEQYD
 # VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
 # b3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29mdCBUaW1lLVN0YW1w
-# IFBDQSAyMDEwAhMzAAACEKvN5BYY7zmwAAEAAAIQMCIEIORyAKzAgLOZifOLghn1
-# L/o0tdIlktezEiWVqdfqY04yMA0GCSqGSIb3DQEBCwUABIICAHvD2ZiYz1+mWYFs
-# mVjbFk22nS/1fEN6d1bBJOm04P78yRGbUqBworgsK7QK4Hr+TiQLko+PCEnDn9Q6
-# wlJajOXu5kta99Mo/6ns5bd/9UhhyZye9P10DsupNWGrPuy/Jfdhf6vcyi+eOhH5
-# bJvG4QarKjNxEZjqDWerkHc4TD9jno9/e0ntfsITfX2l3cbOlJoZlnLcxbMQuQwp
-# CSsOAM0Rm5nbF/r5ZfyOpwYQOLtLFxCv+P8Dahb2UqeV7+ekznmMOlln6eC2qUSR
-# gpZq+oFdcjIrgz8UoZH1BnbYley6KgzDyVXrj2x0DpfxKTVoLK5as2SKd57deR6i
-# SmZAEno9N4l3OFxc1d2gd4qZMF85ZLzaH121BmfAKzP+NOZfojPHGr8SkPCv3p6i
-# yvoJelkG4JVNCCQLyCDwj393pdD3eJecc2v+hNUt7UOUEwy/M8egT375xfFEGe4s
-# tHXXQ8N+MmcA9ELhXu8v3CeKpoPTbrIXc0ZJWhfPMt1uC6vzZI/ZiI5snM7aSipV
-# 7d1Lbq067UWrrvPClI9o6uTW8a0reAoycvtuaTI53Ishi02aIKdD+y1GDKcJS5EK
-# TAuDY5zUcyU/S/9qVCFJFgffBK3uXqpeDHMtdIrqalfIr1uYOr8d1VYvyGwZQhS0
-# /Uom3MsjfWvqWmhnYXmhl1yBbOah
+# IFBDQSAyMDEwAhMzAAACFRgD04EHJnxTAAEAAAIVMCIEILC2cA9vBkU47Y4zYqC+
+# 32C/Y4GRlZWK6gBnldDlYYkTMA0GCSqGSIb3DQEBCwUABIICABG1L2b8ej9yQaUf
+# VSVWqH0rtN8r2OlSsEiylzObcSILcYj86tYeMJm02BFE9IUwnHlQ2Tn+nbuxVQxh
+# 0Yr9bl9c37mO00d/eagiq86DoYNDyqDyksU14nRuE6vQmJy/I9LSNvnNZDe37Hvw
+# 6elEcfFYXTxdASkgIVDNJq8fG44GcvjMFW+TX9YvmeJ4xSHsdRg8dMX1m8V45dN4
+# e44kCJZVk3Xw1vxQ3yqIkyLE6RZ4GeQXHjVAwwYFsPMlb43W4JMOe4F1RtfOfzNm
+# VeqPckJZjBVpd9yA5gFrWIgjF0sy1TSlJsZfWue5Rc7bIYOg1DIOnvI/TZfyPhdY
+# k25Z757gZ8BcbTdiS27E84qjhIZysgDB0qv8q4ojeglVEb433VBbIRuRhV3vjRTz
+# Hw0NyORTj/vBMZpxZu0uX+hHsVLyGaJ6MF/vxGkR4XCd4AsI86JzaSVitsLSaUHK
+# mhGYogX+wi3d0iw7u1UTlTe0kPfKoV5qra0dTGG8qzBA58Pz0RU6fLjht4DwcBG9
+# 0Ztk5KsVo8BrSCgU0hSwKQ5iUHW7TOtcYUTzZzy+sEof6j3yfKWOW5ItUcyMZQSj
+# 5BQ2R4LSEsFdgH26XkJl4I1UiIFgDGHpxw7dDgqZKPBWUfhU53C/dFarqJWoSFbK
+# Wea6BXzmp2xMH8LkxYHNdd7act3i
 # SIG # End signature block

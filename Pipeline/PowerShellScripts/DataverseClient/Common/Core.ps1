@@ -1,3 +1,9 @@
+# Well-known Microsoft first-party public client ID for Dataverse interactive sign-in.
+# Works with any commercial-cloud Dataverse environment (prod and non-prod).
+# Pre-consented for Dataverse user_impersonation; supports http://localhost redirect.
+# See: https://learn.microsoft.com/power-apps/developer/data-platform/authenticate-oauth
+$script:DataversePublicClientId = '51f81489-12ee-4a9e-aaae-a2591f45987d'
+
 function Connect {
     param (
         [Parameter(Mandatory)]
@@ -134,11 +140,211 @@ function New-ClientAssertion {
 
     return "$unsigned.$(& $toBase64Url $sig)"
 }
+
+function Connect-Interactive {
+    <#
+    .SYNOPSIS
+        Connects to Dataverse via interactive user sign-in (OAuth 2.0 Authorization Code + PKCE).
+
+    .DESCRIPTION
+        Opens the default browser to sign the user in to Microsoft Entra ID, receives the
+        authorization code on a temporary http://localhost loopback listener, and exchanges
+        it for an access token scoped to the target Dataverse environment. On success, sets
+        the same $global:baseHeaders and $global:baseURI used by the rest of the client.
+        Intended for local/developer use only — the pipeline continues to use client secret
+        or certificate.
+
+    .PARAMETER environmentUrl
+        The Dataverse environment URL (e.g., https://myorg.crm.dynamics.com/).
+
+    .PARAMETER tenantId
+        Microsoft Entra tenant ID.
+
+    .PARAMETER clientId
+        Optional public client ID. Defaults to the Microsoft well-known public client with
+        Dataverse pre-consent that allows the http://localhost loopback redirect.
+    #>
+    param (
+        [Parameter(Mandatory)]
+        [String]
+        $environmentUrl,
+
+        [Parameter(Mandatory)]
+        [String]
+        $tenantId,
+
+        [Parameter()]
+        [String]
+        $clientId = $script:DataversePublicClientId
+    )
+
+    if (-not $environmentUrl.EndsWith('/')) { $environmentUrl += '/' }
+
+    $authority = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0"
+    $scope     = "${environmentUrl}user_impersonation"
+
+    # Generate PKCE code verifier, challenge (S256), and CSRF state.
+    $b64url = { param([byte[]] $bytes) [Convert]::ToBase64String($bytes).TrimEnd('=').Replace('+', '-').Replace('/', '_') }
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $bytes = New-Object byte[] 32; $rng.GetBytes($bytes); $codeVerifier  = & $b64url $bytes
+        $bytes = New-Object byte[] 16; $rng.GetBytes($bytes); $state         = & $b64url $bytes
+        $codeChallenge = & $b64url $sha.ComputeHash([Text.Encoding]::ASCII.GetBytes($codeVerifier))
+    }
+    finally { $rng.Dispose(); $sha.Dispose() }
+
+    # Reserve a free loopback port atomically, then hand it to HttpListener.
+    $probe = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+    $probe.Start()
+    try { $port = ([System.Net.IPEndPoint] $probe.LocalEndpoint).Port }
+    finally { $probe.Stop() }
+
+    $redirectUri = "http://localhost:$port/"
+    $listener    = [System.Net.HttpListener]::new()
+    $listener.Prefixes.Add($redirectUri)
+    $listener.Start()
+
+    try {
+        $authorizeParams = [ordered] @{
+            client_id             = $clientId
+            response_type         = 'code'
+            redirect_uri          = $redirectUri
+            response_mode         = 'query'
+            scope                 = $scope
+            state                 = $state
+            code_challenge        = $codeChallenge
+            code_challenge_method = 'S256'
+            prompt                = 'select_account'
+        }
+        $query        = ($authorizeParams.GetEnumerator() | ForEach-Object { "$($_.Key)=$([System.Uri]::EscapeDataString($_.Value))" }) -join '&'
+        $authorizeUrl = "$authority/authorize?$query"
+
+        Write-Host "Opening browser for interactive sign-in..."
+        try {
+            Start-Process $authorizeUrl -ErrorAction Stop | Out-Null
+        }
+        catch {
+            Write-Warning "Could not launch browser automatically. Please open this URL manually:`n$authorizeUrl"
+        }
+
+        # Wait for the auth redirect, ignoring unrelated requests (e.g. favicon).
+        # Polls in 500ms intervals so Ctrl+C can interrupt between iterations.
+        $deadline = (Get-Date).AddMinutes(2)
+        $callback = $null
+        while ($true) {
+            $contextTask = $listener.GetContextAsync()
+            while (-not $contextTask.Wait(500)) {
+                if ((Get-Date) -ge $deadline) {
+                    throw "Interactive sign-in timed out after 2 minutes. Please try again."
+                }
+            }
+            $context = $contextTask.Result
+
+            # Parse query string.
+            $params = @{}
+            foreach ($pair in $context.Request.Url.Query.TrimStart('?').Split('&')) {
+                if (-not $pair) { continue }
+                $kv = $pair.Split('=', 2)
+                $params[$kv[0]] = if ($kv.Length -eq 2) { [System.Uri]::UnescapeDataString($kv[1]) } else { '' }
+            }
+
+            if ($params['code'] -or $params['error']) {
+                # Auth redirect received — respond to the browser and break.
+                $callback = $params
+                if ($callback['error']) {
+                    $safeError = [System.Net.WebUtility]::HtmlEncode($callback['error'])
+                    $safeDesc  = [System.Net.WebUtility]::HtmlEncode($callback['error_description'])
+                    $htmlBody  = "<h2>Sign-in failed</h2><p>$safeError`: $safeDesc</p>"
+                }
+                else {
+                    $htmlBody = '<h2>Sign-in complete</h2><p>You can close this tab and return to the terminal.</p>'
+                }
+                try {
+                    $responseBytes = [Text.Encoding]::UTF8.GetBytes(@"
+<!doctype html><html><head><meta charset="utf-8"><title>Dataverse Sign-in</title></head>
+<body style="font-family:Segoe UI,Arial,sans-serif;padding:2rem">$htmlBody</body></html>
+"@)
+                    $context.Response.ContentType     = 'text/html; charset=utf-8'
+                    $context.Response.ContentLength64 = $responseBytes.Length
+                    $context.Response.OutputStream.Write($responseBytes, 0, $responseBytes.Length)
+                    $context.Response.OutputStream.Close()
+                }
+                catch {
+                    # Browser may have closed the tab — safe to ignore since we already have the auth code.
+                    try { $context.Response.Close() } catch { }
+                }
+                break
+            }
+
+            # Not the auth redirect (e.g. favicon) — dismiss and keep listening.
+            $context.Response.StatusCode = 204
+            $context.Response.Close()
+        }
+
+        # Validate the callback.
+        if ($callback['error']) {
+            throw "Sign-in failed: $($callback['error']) - $($callback['error_description'])"
+        }
+        if ($callback['state'] -ne $state) {
+            throw "State mismatch in sign-in response (possible CSRF). Expected '$state', got '$($callback['state'])'."
+        }
+        if (-not $callback['code']) {
+            throw "No authorization code returned from sign-in."
+        }
+
+        $authCode = $callback['code']
+    }
+    finally {
+        if ($listener.IsListening) { $listener.Stop() }
+        $listener.Close()
+    }
+
+    # Exchange the authorization code for an access token.
+    try {
+        Write-Host "Exchanging authorization code for access token..."
+        $tokenResponse = Invoke-RestMethod -Uri "$authority/token" `
+            -Method Post `
+            -Body @{
+                client_id     = $clientId
+                grant_type    = 'authorization_code'
+                code          = $authCode
+                redirect_uri  = $redirectUri
+                code_verifier = $codeVerifier
+                scope         = $scope
+            } `
+            -ContentType 'application/x-www-form-urlencoded' `
+            -ErrorAction Stop
+
+        $global:baseHeaders = @{
+            'Authorization'    = "Bearer $($tokenResponse.access_token)"
+            'Accept'           = 'application/json'
+            'OData-MaxVersion' = '4.0'
+            'OData-Version'    = '4.0'
+            'Content-Type'     = 'application/json; charset=utf-8'
+        }
+        $global:baseURI = "${environmentUrl}api/data/v9.2/"
+
+        Write-Host "Successfully connected to $environmentUrl" -ForegroundColor Green
+        Write-Verbose "Base URI set to: $global:baseURI"
+
+        return @{
+            Connected    = $true
+            BaseURI      = $global:baseURI
+            TokenExpires = (Get-Date).AddSeconds($tokenResponse.expires_in)
+        }
+    }
+    catch {
+        Write-Error "Failed to connect to Dataverse interactively: $($_.Exception.Message)"
+        throw
+    }
+}
+
 # SIG # Begin signature block
-# MIInbgYJKoZIhvcNAQcCoIInXzCCJ1sCAQExDzANBglghkgBZQMEAgEFADB5Bgor
+# MIIncQYJKoZIhvcNAQcCoIInYjCCJ14CAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCByBPpkDip3Yj1d
-# 1qmahJ6JenWB6bm77OuWnpjIFAdyMaCCDMkwggYEMIID7KADAgECAhMzAAACHPrN
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCDX5hJmtLOvMpLs
+# XkShtsJXkhwNGBeqRZeqk/6aiuQquaCCDMkwggYEMIID7KADAgECAhMzAAACHPrN
 # xZvoL37EAAAAAAIcMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNVBAYTAlVTMR4wHAYD
 # VQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBD
 # b2RlIFNpZ25pbmcgUENBIDIwMjQwHhcNMjYwNDE2MTg1OTQxWhcNMjcwNDE1MTg1
@@ -206,67 +412,67 @@ function New-ClientAssertion {
 # /fg8B2qjW88MT/WF5V5uvZGtqa9FSL2RazArA+rDPuf6JGYz4HpgMZHB4S6szWSK
 # YBv0VisCzfxgeU+dquXW9bd0auYlOB58DPcOYKdc3Se94g+xL4pcEhbB54JOgAkw
 # YTu/9dLeH2pDqeJZAABVDWRQCaXfO5LgyKwKCLYXpigrZYCjUSBcr+Ve8PFWMhVT
-# Ql0v4q8J/AUmQN5W4n101cY2L4A7GTQG1h32HHAvfQESWP0xghn7MIIZ9wIBATBu
+# Ql0v4q8J/AUmQN5W4n101cY2L4A7GTQG1h32HHAvfQESWP0xghn+MIIZ+gIBATBu
 # MFcxCzAJBgNVBAYTAlVTMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24x
 # KDAmBgNVBAMTH01pY3Jvc29mdCBDb2RlIFNpZ25pbmcgUENBIDIwMjQCEzMAAAIc
 # +s3Fm+gvfsQAAAAAAhwwDQYJYIZIAWUDBAIBBQCgga4wGQYJKoZIhvcNAQkDMQwG
 # CisGAQQBgjcCAQQwHAYKKwYBBAGCNwIBCzEOMAwGCisGAQQBgjcCARUwLwYJKoZI
-# hvcNAQkEMSIEIB9YhCYfo7TLj5cYd/r/heygqBLAon1oSImK7KVim0lmMEIGCisG
+# hvcNAQkEMSIEIIFUeJ0JHGftJd8pWZZMi2XQ9hnh9j+yXwiGGvR7GjdeMEIGCisG
 # AQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8AcwBvAGYAdKEagBhodHRwOi8vd3d3
-# Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEBBQAEggEAzlUvGomHAw7JrrJSHYgR
-# SghiU9+Bt3Rl+B3jLq6syTubv/6tEc1TjF2lOwTLWPHbMcHA3URgpmaEIILdfs2G
-# HZNnfeslM6IT+8j6h1CAS18EdFjhtAK8wsSiVEhJNWKNuVGd+wYsDjV215I5byAQ
-# 2oAU7YMcXltBrUDVWKz08jh9AeztvNvROHg/IS3gxiSUjgWnUO1WcHkvQwZQoJpr
-# hvtBqjR4Wu6wwBobC1sG4h5n2eHaVb4lWQPnNLVrrwRZH4nR1dXXBgfjZdZ5YziP
-# kEKCnvLsfsPbqbgmFsrAew9jOWxAzt+DIP2cpRRPHK4vdfOhBeT+s9+64yi1tPfv
-# F6GCF60wghepBgorBgEEAYI3AwMBMYIXmTCCF5UGCSqGSIb3DQEHAqCCF4YwgheC
+# Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEBBQAEggEAKz/YyrvOAWHdvTDE4KWG
+# 7YXni6oF9PToXLTxHGdX0Rv+sAEnRf/3vSI5zu0jdR8cVWmjo0GP7ErS7E0Dl2Hw
+# VTwfLckhvuvsKVj9fAiSc+DisWzfOKiKDucj7YlhiTz2Z0KmQJx1FVkJqquFJQtR
+# ymnCwqdO7CiSsgTD+LLFlow74LhLGxddhq0BIuhVwn+iB/OcqwKDgOs7XwIQcDeC
+# P16EPpaNjQkd0vJ8tc6LB2Q1aXfDYHzNyrn8pzuXV+1fXuW5py3z6o64m4gcqxOK
+# xfTG4dNrymxfGcpLCIf6/3jTiOyZEw4hrBp85HGH0yEI4t1qi//Hr4KF7MlNa/ed
+# eqGCF7AwghesBgorBgEEAYI3AwMBMYIXnDCCF5gGCSqGSIb3DQEHAqCCF4kwgheF
 # AgEDMQ8wDQYJYIZIAWUDBAIBBQAwggFaBgsqhkiG9w0BCRABBKCCAUkEggFFMIIB
-# QQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFlAwQCAQUABCDU0jKxIKeV+ZYF0OYl
-# I22bt8laH0pCE0yWj3qvFCHWCQIGaet1MLcEGBMyMDI2MDQyODEwMTExMC4zNDZa
+# QQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFlAwQCAQUABCAqo9DTJTT8fA3jxmYn
+# gAQ0+UaZbIlWoqspLgtnoj56AgIGaeuJr17oGBMyMDI2MDUwMTA2MzExNy42NzVa
 # MASAAgH0oIHZpIHWMIHTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3Rv
 # bjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0
 # aW9uMS0wKwYDVQQLEyRNaWNyb3NvZnQgSXJlbGFuZCBPcGVyYXRpb25zIExpbWl0
-# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjozMjFBLTA1RTAtRDk0NzElMCMG
-# A1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2VydmljZaCCEfswggcoMIIFEKAD
-# AgECAhMzAAACGqmgHQagD0OqAAEAAAIaMA0GCSqGSIb3DQEBCwUAMHwxCzAJBgNV
+# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjoyRDFBLTA1RTAtRDk0NzElMCMG
+# A1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2VydmljZaCCEf4wggcoMIIFEKAD
+# AgECAhMzAAACEtEIBjzKGE+qAAEAAAISMA0GCSqGSIb3DQEBCwUAMHwxCzAJBgNV
 # BAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4w
 # HAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29m
-# dCBUaW1lLVN0YW1wIFBDQSAyMDEwMB4XDTI1MDgxNDE4NDgyOFoXDTI2MTExMzE4
-# NDgyOFowgdMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYD
+# dCBUaW1lLVN0YW1wIFBDQSAyMDEwMB4XDTI1MDgxNDE4NDgxNVoXDTI2MTExMzE4
+# NDgxNVowgdMxCzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpXYXNoaW5ndG9uMRAwDgYD
 # VQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xLTAr
 # BgNVBAsTJE1pY3Jvc29mdCBJcmVsYW5kIE9wZXJhdGlvbnMgTGltaXRlZDEnMCUG
-# A1UECxMeblNoaWVsZCBUU1MgRVNOOjMyMUEtMDVFMC1EOTQ3MSUwIwYDVQQDExxN
+# A1UECxMeblNoaWVsZCBUU1MgRVNOOjJEMUEtMDVFMC1EOTQ3MSUwIwYDVQQDExxN
 # aWNyb3NvZnQgVGltZS1TdGFtcCBTZXJ2aWNlMIICIjANBgkqhkiG9w0BAQEFAAOC
-# Ag8AMIICCgKCAgEAmYEAwSTz79q2V3ZWzQ5Ev7RKgadQtMBy7+V3XQ8R0NL8R9mu
-# pxcqJQ/KPeZGJTER+9Qq/t7HOQfBbDy6e0TepvBFV/RY3w+LOPMKn0Uoh2/8IvdS
-# bJ8qAWRVoz2S9VrJzZpB8/f5rQcRETgX/t8N66D2JlEXv4fZQB7XzcJMXr1puhuX
-# bOt9RYEyN1Q3Z7YjRkhfBsRc+SD/C9F4iwZqfQgo82GG4wguIhjJU7+XMfrv4vxA
-# FNVg3mn1PoMWGZWio+e14+PGYPVLKlad+0IhdHK5AgPyXKkqAhEZpYhYYVEItHOO
-# vqrwukxVAJXMvWA3GatWkRZn33WDJVtghCW6XPLi1cDKiGE5UcXZSV4OjQIUB8vp
-# 2LUMRXud5I49FIBcE9nT00z8A+EekrPM+OAk07aDfwZbdmZ56j7ub5fNDLf8yIb8
-# QxZ8Mr4RwWy/czBuV5rkWQQ+msjJ5AKtYZxJdnaZehUgUNArU/u36SH1eXKMQGRX
-# r/xeKFGI8vvv5Jl1knZ8UqEQr9PxDbis7OXp2WSMK5lLGdYVH8VownYF3sbOiRkx
-# 5Q5GaEyTehOQp2SfdbsJZlg0SXmHphGnoW1/gQ/5P6BgSq4PAWIZaDJj6AvLLCdb
-# URgR5apNQQed2zYUgUbjACA/TomA8Ll7Arrv2oZGiUO5Vdi4xxtA3BRTQTUCAwEA
-# AaOCAUkwggFFMB0GA1UdDgQWBBTwqyIJ3QMoPasDcGdGovbaY8IlNjAfBgNVHSME
+# Ag8AMIICCgKCAgEAr0zToDkpWQtsZekS0cV0quDdKSTGkovvBaZH0OAIEi0O3CcO
+# 77JiX8c4Epq9uibHVZZ1W/LoufE172vkRXO+QYNtWWorECJ2AcZQ10bpAltkhZNi
+# XlVJ8L3QzhKgrXrmMkm2J+/g81U23JPcO4wXHEftonT3wpd//936rjmwxMm7Nkbs
+# ygbJf+4AVBMNr4aMPQhBd76od0KMB6WrvyEGOOU0893OFufS5EDey4n44WgaxJE0
+# Vnv3/OOvuOw5Kp1KPqjjYJ+L9ywLuBMtcDfLpNQO/h1eFEoMrbiEM67TOfNlXfxb
+# Dz4MlsYvLioxgd2Xzey1QxrV1+i+JyVDJMiSe9gKOuzpiQQFE19DUPgsidyjLTzX
+# EhSVLBlRor0eCVf7gC6Rfk8NY3rO2sggOL79vU5FuDKTh/sIOtcUHeHC42jBGB+t
+# fdKC1KOBR+UlN9aOzg8mpUNI2FgqQvirVP9ppbeMUfvp2wA9voyTiRWvDgzCxo8x
+# lJ1nscYTHIQrmkF9j/Ca0IDmt8fvOn64nnlJOGUYZYHMC1l0xtgkYTE1ESUqqkaw
+# Kk7iqbxdnLyycS+dR+zaxPudMDLrQFz8lgfy9obk0D8HC2dzhWpYNn5hdkoPEzgC
+# qQUOp8v3Qj/sd4anyupe5KoCkjABOP3yhSQ4W9Z+DrJnhM/rbsXC7oTv26cCAwEA
+# AaOCAUkwggFFMB0GA1UdDgQWBBRSBblSxb5cYKYOwvd/VfoXOfu33jAfBgNVHSME
 # GDAWgBSfpxVdAF5iXYP05dJlpxtTNRnpcjBfBgNVHR8EWDBWMFSgUqBQhk5odHRw
 # Oi8vd3d3Lm1pY3Jvc29mdC5jb20vcGtpb3BzL2NybC9NaWNyb3NvZnQlMjBUaW1l
 # LVN0YW1wJTIwUENBJTIwMjAxMCgxKS5jcmwwbAYIKwYBBQUHAQEEYDBeMFwGCCsG
 # AQUFBzAChlBodHRwOi8vd3d3Lm1pY3Jvc29mdC5jb20vcGtpb3BzL2NlcnRzL01p
 # Y3Jvc29mdCUyMFRpbWUtU3RhbXAlMjBQQ0ElMjAyMDEwKDEpLmNydDAMBgNVHRMB
 # Af8EAjAAMBYGA1UdJQEB/wQMMAoGCCsGAQUFBwMIMA4GA1UdDwEB/wQEAwIHgDAN
-# BgkqhkiG9w0BAQsFAAOCAgEA1a72WFq7B6bJT3VOJ21nnToPJ9O/q51bw1bhPfQy
-# 67uy+f8x8akipzNL2k5b6mtxuPbZGpBqpBKguDwQmxVpX8cGmafeo3wGr4a8Yk6S
-# y09tEh/Nwwlsyq7BRrJNn6bGOB8iG4OTy+pmMUh7FejNPRgvgeo/OPytm4NNrMMg
-# 98UVlrZxGNOYsifpRJFg5jE/Yu6lqFa1lTm9cHuPYxWa2oEwC0sEAsTFb69iKpN0
-# sO19xBZCr0h5ClU9Pgo6ekiJb7QJoDzrDoPQHwbNA87Cto7TLuphj0m9l/I70gLj
-# Eq53SHjuURzwpmNxdm18Qg+rlkaMC6Y2KukOfJ7oCSu9vcNGQM+inl9gsNgirZ6y
-# Jk9VsXEsoTtoR7fMNU6Py6ufJQGMTmq6ZCq2eIGOXWMBb79ZF6tiKTa4qami3US0
-# mTY41J129XmAglVy+ujSZkHu2lHJDRHs7FjnIXZVUE5pl6yUIl23jG50fRTLQcSt
-# dwY/LvJUgEHCIzjvlLTqLt6JVR5bcs5aN4Dh0YPG95B9iDMZrq4rli5SnGNWev5L
-# LsDY1fbrK6uVpD+psvSLsNpht27QcHRsYdAMALXM+HNsz2LZ8xiOfwt6rOsVWXoi
-# HV86/TeMy5TZFUl7qB59INoMSJgDRladVXeT9fwOuirFIoqgjKGk3vO2bELrYMN0
-# QVwwggdxMIIFWaADAgECAhMzAAAAFcXna54Cm0mZAAAAAAAVMA0GCSqGSIb3DQEB
+# BgkqhkiG9w0BAQsFAAOCAgEAXnSAkmX79Rc7lxS1wOozXJ7V0ou5DntVcOJplIkD
+# jvEN8BIQph4U+gSOLZuVReP/z9YdUiUkcPwL1PM245/kEX1EegpxNc8HDA6hKCHg
+# 0ALNEcuxnGOlgKLokXfUer1D5hiW8PABM9R+neiteTgPaaRlJFvGTYvotc0uqGiE
+# S5hMQhL8RNFhpS9RcIWHtnQGEnrdOUvCAhs4FeViawcmLTKv+1870c/MeTHi0QDd
+# eR+7/Wg4qhkJ2k1iEHJdmYf8rIV0NRBZcdRTTdHee35SXP5neNCfAkjDIuZycRud
+# 6jzPLCNLiNYzGXBswzJygj4EeSORT7wMvaFuKeRAXoXC3wwYvgIsI1zn3DGY625Y
+# +yZSi8UNSNHuri36Zv9a+Q4vJwDpYK36S0TB2pf7xLiiH32nk7YK73Rg98W6fZ2I
+# NuzYzZ7Ghgvfffkj4EUXg1E0EffY1pEqkbpDTP7h/DBqtzoPXsyw2MUh+7yvWcq2
+# BGZSuca6CY6X4ioMuc5PWpsmvOOli7ARNA7Ab8kKdCc2gNDLacglsweZEc9/VQB6
+# hls/b6Kk32nkwuHExKlaeoSVrKB5U9xlp1+c8J/7GJj4Rw7AiQ8tcp+WmfyD8KxX
+# 2QlKbDi4SUjnglv4617R8+a/cDWJyaMt8279Wn7f2yMedN7kfGIQ5SZj66RdhdlZ
+# Oq8wggdxMIIFWaADAgECAhMzAAAAFcXna54Cm0mZAAAAAAAVMA0GCSqGSIb3DQEB
 # CwUAMIGIMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UE
 # BxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0aW9uMTIwMAYD
 # VQQDEylNaWNyb3NvZnQgUm9vdCBDZXJ0aWZpY2F0ZSBBdXRob3JpdHkgMjAxMDAe
@@ -305,45 +511,45 @@ function New-ClientAssertion {
 # S5pu+yFUa2pFEUep8beuyOiJXk+d0tBMdrVXVAmxaQFEfnyhYWxz/gq77EFmPWn9
 # y8FBSX5+k77L+DvktxW/tM4+pTFRhLy/AsGConsXHRWJjXD+57XQKBqJC4822rpM
 # +Zv/Cuk0+CQ1ZyvgDbjmjJnW4SLq8CdCPSWU5nR0W2rRnj7tfqAxM328y+l7vzhw
-# RNGQ8cirOoo6CGJ/2XBjU02N7oJtpQUQwXEGahC0HVUzWLOhcGbyoYIDVjCCAj4C
+# RNGQ8cirOoo6CGJ/2XBjU02N7oJtpQUQwXEGahC0HVUzWLOhcGbyoYIDWTCCAkEC
 # AQEwggEBoYHZpIHWMIHTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGluZ3Rv
 # bjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBvcmF0
 # aW9uMS0wKwYDVQQLEyRNaWNyb3NvZnQgSXJlbGFuZCBPcGVyYXRpb25zIExpbWl0
-# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjozMjFBLTA1RTAtRDk0NzElMCMG
+# ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjoyRDFBLTA1RTAtRDk0NzElMCMG
 # A1UEAxMcTWljcm9zb2Z0IFRpbWUtU3RhbXAgU2VydmljZaIjCgEBMAcGBSsOAwIa
-# AxUA8YrutmKpSrubCaAYsU4pt1Ft8DaggYMwgYCkfjB8MQswCQYDVQQGEwJVUzET
+# AxUA5VHBr4h00EN7jUdQ33SE+qbk/8CggYMwgYCkfjB8MQswCQYDVQQGEwJVUzET
 # MBEGA1UECBMKV2FzaGluZ3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMV
 # TWljcm9zb2Z0IENvcnBvcmF0aW9uMSYwJAYDVQQDEx1NaWNyb3NvZnQgVGltZS1T
-# dGFtcCBQQ0EgMjAxMDANBgkqhkiG9w0BAQsFAAIFAO2akLswIhgPMjAyNjA0Mjgw
-# MTQ5NDdaGA8yMDI2MDQyOTAxNDk0N1owdDA6BgorBgEEAYRZCgQBMSwwKjAKAgUA
-# 7ZqQuwIBADAHAgEAAgI13DAHAgEAAgIStzAKAgUA7ZviOwIBADA2BgorBgEEAYRZ
-# CgQCMSgwJjAMBgorBgEEAYRZCgMCoAowCAIBAAIDB6EgoQowCAIBAAIDAYagMA0G
-# CSqGSIb3DQEBCwUAA4IBAQCG3vlWti4hn+8d+YVbDF/zHxZBQddhW9T0m1eYjsrD
-# 6tTyqc3LJYA0zMbu+NP+mupMhMJnLnCyxlemUpN5aVj2huA4tW8DkU0haLyOuxow
-# ndWiluUKsipoaylDNnxHo1m3cEr3QmEGwSgJKS9W8wPeIqhC5oxk1JtbyBK04S1F
-# nwsA6oPEIQmLpBmbp10Bo6jzPDye8MbIvXxoduvzV4QvIEtlM/Gdr92sBaxftBLA
-# vBmZ6uHlV+ANoZL55N/HY8LTniAbAFJIN70sqiNUdEVB6QXLQxQlX6rfZzoQr4Oh
-# FHy1TVOZ/5knyY5THx5kZZ0oTyBuWVO12D07Ivjhl1LAMYIEDTCCBAkCAQEwgZMw
-# fDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcTB1Jl
-# ZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjEmMCQGA1UEAxMd
-# TWljcm9zb2Z0IFRpbWUtU3RhbXAgUENBIDIwMTACEzMAAAIaqaAdBqAPQ6oAAQAA
-# AhowDQYJYIZIAWUDBAIBBQCgggFKMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0BCRAB
-# BDAvBgkqhkiG9w0BCQQxIgQgCqkHXb1KM1e4RcZ/uGjUG1tdVor0KvJwZvckGofd
-# TmQwgfoGCyqGSIb3DQEJEAIvMYHqMIHnMIHkMIG9BCCdeiHHrbtpKcwB20doVU89
-# WHIOH8S7w37uaHcDmemK+zCBmDCBgKR+MHwxCzAJBgNVBAYTAlVTMRMwEQYDVQQI
-# EwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNyb3Nv
-# ZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29mdCBUaW1lLVN0YW1wIFBD
-# QSAyMDEwAhMzAAACGqmgHQagD0OqAAEAAAIaMCIEICCk4+EU1FPjNC+3lFQZukBF
-# +hf/hjB8qZTUrij0r1pKMA0GCSqGSIb3DQEBCwUABIICAJDm0QAfk2dFLqRbHvJF
-# l8ekoAZoPxjVN12tyR+uR8dJQTbqK7aEClSY1Kj31kuTorIaLXztBYiqi8mF8GDR
-# 7xoP8HG8Pcm0S0KekWXaAs20ffBVvH3VRd8SE9thwHaSE1jHgqmcEPpeYVI0A8IM
-# /MY36fQ5BUgUo3EU2KcFJ/H8GfK7IFRawhIGiscnZt/JJog0+pNTZ69HGz4lslgZ
-# LyR6fmSnxAD2fi6OwOkVzY8XTLRtASFkwcZKFWrMVFWtKmmmSxAztUrDCtGipO/3
-# py7DRMWESW602XrXd6X3nDdoWrf5U523Itst5oONDxYE54qqSKCDQ+mFq0xj3eEu
-# hVg3q73Ko7jVMTAgs22fWC0VU8IOp7SQtGK3VwbXjht7BxRJVwXY8fAiX6MBEEpx
-# PGMiMhQDlwHAIEkuonJBC1LBZOKRIKoZ6zf36mlVCkFpVtpcpcy03w5W6kzlJaR+
-# 1Wo3dBazfyhnRCdXjA1Pid+4vb7PMo30rOXmRYCpjYUt5Bd66e0e4Fqdy1whR+lH
-# Uc3kxMgROuLI02+rKbcn+gzUv0zNHfgaqS6oJsW/EVeSPNlYSmqRCjpqdEeetpOW
-# Hl6Gc5PQSq1Vma4MeQpNW1E/ag8T49TelqS/exTLSczN0hL+U3Ah1g8X419LEvAD
-# Z6ZO3CcW3+hE7imbrIsjtDlT
+# dGFtcCBQQ0EgMjAxMDANBgkqhkiG9w0BAQsFAAIFAO2emXgwIhgPMjAyNjA1MDEw
+# MzE2MDhaGA8yMDI2MDUwMjAzMTYwOFowdzA9BgorBgEEAYRZCgQBMS8wLTAKAgUA
+# 7Z6ZeAIBADAKAgEAAgITIwIB/zAHAgEAAgISVzAKAgUA7Z/q+AIBADA2BgorBgEE
+# AYRZCgQCMSgwJjAMBgorBgEEAYRZCgMCoAowCAIBAAIDB6EgoQowCAIBAAIDAYag
+# MA0GCSqGSIb3DQEBCwUAA4IBAQA8n97u0uNVEX8Tbwc8w1DJuXKeLuGSxwjXdpwU
+# oNqWaRB36s4UZ+Fj3HDfEeBox/v3k8sM1RYxv/j7uERIhbVZkdyfKlLq73fj8aVr
+# 32sXAKZO2A4MY7xajcbBgnJL8AhC7fFP5Jz7tfCpB3ARI2rzOQ7Vqry1cGK4Yg/G
+# BJJlvY2fDypXwtcUfr6W9zM88TQ0I26xbHBpGU2iEeYiHtQSE0ZMcoTSeGpQwB0R
+# S6dlZ04wu+z9TowcehufQzs1ue6C+B23Qtkw0Tszmlnu/ebd3ndn9CIyKUK+nuKk
+# s84vKpTdWHxI8Hk16lu31GY9fkaspdZQE8CLfIYGnhWdWJL2MYIEDTCCBAkCAQEw
+# gZMwfDELMAkGA1UEBhMCVVMxEzARBgNVBAgTCldhc2hpbmd0b24xEDAOBgNVBAcT
+# B1JlZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjEmMCQGA1UE
+# AxMdTWljcm9zb2Z0IFRpbWUtU3RhbXAgUENBIDIwMTACEzMAAAIS0QgGPMoYT6oA
+# AQAAAhIwDQYJYIZIAWUDBAIBBQCgggFKMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0B
+# CRABBDAvBgkqhkiG9w0BCQQxIgQgqRBTJ4SfEJ4TxsQQfeAYIYWLwwQR9G2vKpVU
+# 1x+UsQgwgfoGCyqGSIb3DQEJEAIvMYHqMIHnMIHkMIG9BCBz+X5GvO7WngknH4BZ
+# eYU+BzBL1Jy5oJ8wVlTNIxfYgzCBmDCBgKR+MHwxCzAJBgNVBAYTAlVTMRMwEQYD
+# VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
+# b3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29mdCBUaW1lLVN0YW1w
+# IFBDQSAyMDEwAhMzAAACEtEIBjzKGE+qAAEAAAISMCIEIMBFefwqpbu/5Ro1BM5a
+# RoWgkHzWbay1376Llx48F125MA0GCSqGSIb3DQEBCwUABIICAFB0QK60E4Gn5JVM
+# CkNz2I6i12QkrxaQFnNXEKbh3LVgtZN8SoEUhKzfI23ZLTB1kVWO/2VTDPiXvetG
+# eiVulHZw2lXBrSFfpb+fGa0swMiaJgsESoRiBhIV8+pn3KA4Ym2MkStT4IGGjLeV
+# zjlAINWzz+tKZXKytLLvKFBG4NwnnwqkpYvLJ6Z/6ESuUOzEN9gPyD8565iKvmGD
+# 3SYwgaLIlW0oiSFdZ95/5+cmHtTNmTVjUD4orjSfwndsW6ZBLxDOZzcrvsMD8dTf
+# Z5wJG7LktAVwAQ6hilV7wY0K3/m6MrVN0p+xVEbQMhQ+DRRTbTyzvKulPax1AyJh
+# lVSLb/m3sdGAoqKzpFuQuuKmQoARe9eUOvxO9cWV8U82mZuBWaH7EjTNRvQaxm2F
+# ZBpdiRDiJ67eFSiDxmiyVx2VQjVC1XwZddSNkpOugT2Zh5btlNlxJ8j3IwzrBuaD
+# fvQh5jce3L/8DyLVD1krndD0ZN8ZyCQmVJEwq20SGLTlEVo4vhOgMxgYVDmSUdCT
+# 4F8b967vuiv0G2oWk5Kja3P3ETUxEQOXPjxxXt9WcZfGCwMi46dHgoQzpW/oQYQg
+# auEkcD4EysMMKoP5rbtdpkkhTn9c9XJ/41ZVv+itVz2Q6c31lafPSrMN2707PBMu
+# BgzwIWzIM0frOvlJf1dSvkI7yA68
 # SIG # End signature block
