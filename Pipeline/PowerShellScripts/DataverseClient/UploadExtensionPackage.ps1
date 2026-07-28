@@ -1,47 +1,211 @@
 <#
 .SYNOPSIS
-Uninstalls the Commerce Scale Unit Sample Extension.
+    Uploads a CSU extension package to Dataverse.
+
+.DESCRIPTION
+    Connects to the specified Dataverse environment, reads package metadata from
+    the embedded manifest.json, creates a CSU extension package record, and
+    uploads the zip file in chunked mode.
+
+.PARAMETER PackageFilePath
+    Full path to the CSU extension package zip file or the uncompressed package folder.
+    If a folder is provided, manifest.json is read from it, the folder is compressed to a
+    zip in the same parent directory (replacing any existing zip with the same name), and
+    the resulting zip is uploaded.
+
+.PARAMETER EnvironmentUrl
+    The Dataverse environment URL (e.g., https://myorg.crm.dynamics.com/).
+
+.PARAMETER TenantId
+    Azure AD tenant ID.
+
+.PARAMETER ClientId
+    Azure AD application (client) ID.
+
+.PARAMETER ClientSecret
+    Azure AD application client secret. Required if CertificateThumbprint is not provided.
+
+.PARAMETER CertificateThumbprint
+    Thumbprint of a certificate for authentication. If both CertificateThumbprint and ClientSecret are provided, certificate-based authentication (CertificateThumbprint) is used.
+
+.PARAMETER ValidationStatus
+    Validation status to stamp on the package record. Valid values: 'Valid', 'Invalid'.
+    Defaults to 'Valid'.
+
+.PARAMETER Interactive
+    If specified, signs the user in interactively in a browser (OAuth 2.0 Authorization
+    Code + PKCE) instead of using a client secret or certificate. Intended for local /
+    developer use only. When set, ClientSecret and CertificateThumbprint are ignored, and
+    ClientId is optional (defaults to a Microsoft well-known public client with Dataverse
+    pre-consent).
 #>
-Import-Module (Join-Path $PSScriptRoot "ErrorDecorator.psm1")
+param (
+    [Parameter(Mandatory)]
+    [ValidateScript({ Test-Path $_ })]
+    [String]
+    $PackageFilePath,
 
-$workspaceFolder = $Env:common_workspaceFolder
-$NewLine = [Environment]::NewLine
+    [Parameter(Mandatory)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $EnvironmentUrl,
 
-Write-Host
-$InstallerPath = Join-Path $workspaceFolder "Installer\bin\Debug\net472\ScaleUnit.Sample.Installer.exe"
-if (Test-Path -Path $InstallerPath) {
-    Write-Host "Uninstalling the extension."
-    & "$InstallerPath" uninstall
-    if ($LastExitCode -ne 0) {
-        $message = "The extension uninstallation has failed with exit code $LastExitCode."
-        $selfHostProcessName = "Microsoft.Dynamics.Retail.RetailServerSelfHost.AspNetCore"
-        $selfHostProcess = Get-Process "$selfHostProcessName" -ErrorAction SilentlyContinue
-        if (-not $selfHostProcess)
-        {
-            $message += " Please examine the above logs to fix a problem and then try uninstalling again."
+    [Parameter(Mandatory)]
+    [ValidateNotNullOrEmpty()]
+    [String]
+    $TenantId,
+
+    [Parameter()]
+    [String]
+    $ClientId,
+
+    [Parameter()]
+    [String]
+    $ClientSecret,
+
+    [Parameter()]
+    [String]
+    $CertificateThumbprint,
+
+    [Parameter()]
+    [Switch]
+    $Interactive,
+
+    [ValidateSet('Valid', 'Invalid')]
+    [String]
+    $ValidationStatus = 'Valid'
+)
+
+if (-not $Interactive -and [string]::IsNullOrWhiteSpace($ClientId)) {
+    throw "ClientId is required when -Interactive is not specified."
+}
+if (-not $Interactive -and -not $CertificateThumbprint -and -not $ClientSecret) {
+    throw "Either -CertificateThumbprint or -ClientSecret is required when -Interactive is not specified."
+}
+
+$ErrorActionPreference = 'Stop'
+
+Write-Host "Starting CSU extension package upload...`n"
+
+# ── Load Dataverse client modules ────────────────────────────────────────────
+. $PSScriptRoot\Common\Core.ps1
+. $PSScriptRoot\Common\CommonFunctions.ps1
+. $PSScriptRoot\Operations\ExtensionPackageOperations.ps1
+
+# ── Resolve package path ─────────────────────────────────────────────────────
+$packageItem = Get-Item $PackageFilePath
+
+if ($packageItem.PSIsContainer) {
+    # Folder: read manifest directly, then compress to zip
+    $manifestPath = Join-Path $packageItem.FullName 'manifest.json'
+    if (-not (Test-Path $manifestPath)) {
+        throw "manifest.json not found in folder: $($packageItem.FullName)"
+    }
+
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+
+    $zipPath = "$($packageItem.FullName).zip"
+    $tempZipPath = "$zipPath.tmp"
+
+    Write-Host "Compressing current package folder to zip: $zipPath`n"
+    Compress-Archive -Path "$($packageItem.FullName)\*" -DestinationPath $tempZipPath -Force
+
+    if (Test-Path $zipPath) {
+        Remove-Item $zipPath -Force
+    }
+    Rename-Item -Path $tempZipPath -NewName (Split-Path $zipPath -Leaf)
+
+    $packageFile = Get-Item $zipPath
+}
+elseif ($packageItem.Extension -eq '.zip') {
+    # Zip: extract manifest from the archive
+    $packageFile = $packageItem
+
+    $tempDir = Join-Path $env:TEMP "pkg_$(Get-Date -Format 'yyyyMMddHHmmss')"
+    try {
+        Expand-Archive -Path $packageFile.FullName -DestinationPath $tempDir -Force
+
+        $manifestPath = Join-Path $tempDir 'manifest.json'
+        if (-not (Test-Path $manifestPath)) {
+            throw "manifest.json not found in package"
         }
-        else
-        {
-            # The self-host process is running, this may indicate that the debug session is still active
-            # or the self-host process is running in the background.
-            $message += $NewLine + "The process '$selfHostProcessName' is running now."
-            $message += $NewLine + "If the debugger is attached to Scale Unit make sure to stop debugging session and then try uninstalling again."
+
+        $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    }
+    finally {
+        if (Test-Path $tempDir) {
+            Remove-Item $tempDir -Recurse -Force
         }
-        Write-Host
-        Write-CustomError $message
-        Write-Host
-        exit $LastExitCode
     }
 }
 else {
-    Write-Host "The extension installer was not found in "$workspaceFolder\Installer\bin\Debug\net472\" directory."
+    throw "PackageFilePath must be a folder or a .zip file. Got: $PackageFilePath"
 }
+
+# ── Validate manifest fields ─────────────────────────────────────────────────
+$requiredFields = 'customPackageName', 'customPackagePublisher', 'customPackageVersion', 'sdkVersion'
+$missingFields = $requiredFields | Where-Object { -not $manifest.$_ }
+if ($missingFields) {
+    throw "manifest.json is missing required field(s): $($missingFields -join ', ')"
+}
+
+Write-Host "Package file: $($packageFile.Name) ($([Math]::Round($packageFile.Length / 1MB, 2)) MB)"
+
+if ($packageFile.Length -gt 1GB) {
+    throw "Package file size exceeds 1 GB limit"
+}
+
+Write-Host "Package info:"
+Write-Host "  Name:        $($manifest.customPackageName)"
+Write-Host "  Publisher:   $($manifest.customPackagePublisher)"
+Write-Host "  Version:     $($manifest.customPackageVersion)"
+Write-Host "  SDK Version: $($manifest.sdkVersion)"
+if ($manifest.customPackageDescription) {
+    Write-Host "  Description: $($manifest.customPackageDescription)"
+}
+Write-Host ""
+
+# ── Connect to Dataverse ─────────────────────────────────────────────────────
+$connectParams = @{
+    environmentUrl = $EnvironmentUrl
+    tenantId       = $TenantId
+}
+if ($ClientId) { $connectParams.clientId = $ClientId }
+
+if ($Interactive) {
+    Connect-Interactive @connectParams | Out-Null
+}
+else {
+    if ($CertificateThumbprint) { $connectParams.certificateThumbprint = $CertificateThumbprint }
+    elseif ($ClientSecret)      { $connectParams.clientSecret = $ClientSecret }
+
+    Connect @connectParams | Out-Null
+}
+
+Write-Host "Connected as: $((Get-WhoAmI).UserId)`n"
+
+# ── Create package record and upload file ────────────────────────────────────
+$params = @{
+    PackageName      = $manifest.customPackageName
+    PackagePublisher = $manifest.customPackagePublisher
+    PackageVersion   = $manifest.customPackageVersion
+    SdkVersion       = $manifest.sdkVersion
+    ValidationStatus = $ValidationStatus
+}
+if ($manifest.customPackageDescription) {
+    $params.PackageDescription = $manifest.customPackageDescription
+}
+
+$packageId = New-CsuExtensionPackage @params
+Set-CsuExtensionPackageFile -PackageId $packageId -FilePath $packageFile.FullName
+
+Write-Host "SUCCESS: CSU extension package uploaded - $($manifest.customPackageName) ($($manifest.customPackageVersion))`n" -ForegroundColor Green
 
 # SIG # Begin signature block
 # MIInQQYJKoZIhvcNAQcCoIInMjCCJy4CAQExDzANBglghkgBZQMEAgEFADB5Bgor
 # BgEEAYI3AgEEoGswaTA0BgorBgEEAYI3AgEeMCYCAwEAAAQQH8w7YFlLCE63JNLG
-# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCAph3AfI2qyYDSP
-# fmcFPt/joSgr6dhReFGG75jC3TT/XqCCDLowggX1MIID3aADAgECAhMzAAACHU0Z
+# KX7zUQIBAAIBAAIBAAIBAAIBADAxMA0GCWCGSAFlAwQCAQUABCBgUYoSBZEPOZvY
+# lvUz1p2GbW4279F+eyI8NdV4NuYsHaCCDLowggX1MIID3aADAgECAhMzAAACHU0Z
 # yE7XD1dIAAAAAAIdMA0GCSqGSIb3DQEBCwUAMFcxCzAJBgNVBAYTAlVTMR4wHAYD
 # VQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jvc29mdCBD
 # b2RlIFNpZ25pbmcgUENBIDIwMjQwHhcNMjYwNDE2MTg1OTQzWhcNMjcwNDE1MTg1
@@ -113,19 +277,19 @@ else {
 # MR4wHAYDVQQKExVNaWNyb3NvZnQgQ29ycG9yYXRpb24xKDAmBgNVBAMTH01pY3Jv
 # c29mdCBDb2RlIFNpZ25pbmcgUENBIDIwMjQCEzMAAAIdTRnITtcPV0gAAAAAAh0w
 # DQYJYIZIAWUDBAIBBQCggZAwGQYJKoZIhvcNAQkDMQwGCisGAQQBgjcCAQQwLwYJ
-# KoZIhvcNAQkEMSIEIM5HLXkNJTfU6yHhCFrmDkAUopMoqndjFMfTp50gAf8gMEIG
+# KoZIhvcNAQkEMSIEIKMo732WmwzxAKQPKwN2RKyVhDf7GTnfu1v3fpthZ7D6MEIG
 # CisGAQQBgjcCAQwxNDAyoBSAEgBNAGkAYwByAG8AcwBvAGYAdKEagBhodHRwOi8v
-# d3d3Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEBBQAEggEABmWl60Tw16YPuQxB
-# rvOuoCJuBvLGmmxccb7HBQTceNa0SMfacQxkKr4s55UWjB/D5Ukn1dvFT722ak0I
-# F/gFwe5TpDLpZI+Wm/0WFxeQlaKa6LLpXlOqh68PHbVb4m760qA6bbHsWs57Yit2
-# 5LpRuMhdg+p8BTIooOY/D6yRRoo4c0CZRDJuTbK3OIwBezYZzf2Lg0YdhOYOk4lG
-# +WEN9sE/Qv1v5LNPgwLrRufqhFDYS+lyXwje4WBF9mau/gWPCEnXlndm+jLvB8Ft
-# 2Z8l0HFOP42oA7hmFo5TPMJcUf1dVyheWM5aRT0E7Cl+FMsweBa9cCmkS4zZ3uWT
-# LgzfD6GCF60wghepBgorBgEEAYI3AwMBMYIXmTCCF5UGCSqGSIb3DQEHAqCCF4Yw
+# d3d3Lm1pY3Jvc29mdC5jb20wDQYJKoZIhvcNAQEBBQAEggEAbeWEyhro87AN0kEJ
+# 1PL0D5Bux0eTmHp5UREjIS4R1yp0lMHkQ0d/HC04cJW2M8KXqE6kfqd+vX6z8HaH
+# MrOHsCIqzbntw1aHc28BdMm/ociyC7DuaYy4khGsS8v6PFXdT9J97LCh/rFum9XD
+# xvT9pORmlpundes4lOuoIQwTvnIjzSm+JKNkVrECPaxkzhj3qOpszFUHpx48davA
+# 3a5Eny+vFNnmZ0qtlIeksZ/lxuh5gU/SwvykSkPboEjNtYQ2efysQqR3kIhbZcoM
+# bpHCyAXHT1DwHVObRwWh5EkS+mfHRQE1fxtOjJS4rNVmICS93Fast+7KzAQSUOhI
+# l6Tpg6GCF60wghepBgorBgEEAYI3AwMBMYIXmTCCF5UGCSqGSIb3DQEHAqCCF4Yw
 # gheCAgEDMQ8wDQYJYIZIAWUDBAIBBQAwggFaBgsqhkiG9w0BCRABBKCCAUkEggFF
-# MIIBQQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFlAwQCAQUABCD8N7GMIwGb9Luz
-# DX/B/KyfXbyedqTqm/SCVdxULGxeYwIGamNpRKNKGBMyMDI2MDcyNzEwMTIxNi40
-# NDhaMASAAgH0oIHZpIHWMIHTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGlu
+# MIIBQQIBAQYKKwYBBAGEWQoDATAxMA0GCWCGSAFlAwQCAQUABCAlBgm0BsRtHIoq
+# ZwTgUnN2TjvdHKwPGYMy8APqZAtqrwIGamNpRKMvGBMyMDI2MDcyNzEwMTIxNS41
+# NDVaMASAAgH0oIHZpIHWMIHTMQswCQYDVQQGEwJVUzETMBEGA1UECBMKV2FzaGlu
 # Z3RvbjEQMA4GA1UEBxMHUmVkbW9uZDEeMBwGA1UEChMVTWljcm9zb2Z0IENvcnBv
 # cmF0aW9uMS0wKwYDVQQLEyRNaWNyb3NvZnQgSXJlbGFuZCBPcGVyYXRpb25zIExp
 # bWl0ZWQxJzAlBgNVBAsTHm5TaGllbGQgVFNTIEVTTjozNjA1LTA1RTAtRDk0NzEl
@@ -230,22 +394,22 @@ else {
 # B1JlZG1vbmQxHjAcBgNVBAoTFU1pY3Jvc29mdCBDb3Jwb3JhdGlvbjEmMCQGA1UE
 # AxMdTWljcm9zb2Z0IFRpbWUtU3RhbXAgUENBIDIwMTACEzMAAAITsEM1Zs+vlegA
 # AQAAAhMwDQYJYIZIAWUDBAIBBQCgggFKMBoGCSqGSIb3DQEJAzENBgsqhkiG9w0B
-# CRABBDAvBgkqhkiG9w0BCQQxIgQg5BprsoaPGuOQYWTstafEnaS/82weQfVjb3bn
-# VQnjI98wgfoGCyqGSIb3DQEJEAIvMYHqMIHnMIHkMIG9BCDM4QltFIUz8J4DjAzP
+# CRABBDAvBgkqhkiG9w0BCQQxIgQgyr+UO7hfvzfydPhWpvDgIY9Luv3v8OkCzZGQ
+# X3JlroYwgfoGCyqGSIb3DQEJEAIvMYHqMIHnMIHkMIG9BCDM4QltFIUz8J4DjAzP
 # 4nVodZvQxYGleUIfp86Oa5xYaDCBmDCBgKR+MHwxCzAJBgNVBAYTAlVTMRMwEQYD
 # VQQIEwpXYXNoaW5ndG9uMRAwDgYDVQQHEwdSZWRtb25kMR4wHAYDVQQKExVNaWNy
 # b3NvZnQgQ29ycG9yYXRpb24xJjAkBgNVBAMTHU1pY3Jvc29mdCBUaW1lLVN0YW1w
 # IFBDQSAyMDEwAhMzAAACE7BDNWbPr5XoAAEAAAITMCIEIAWFXfqoTkV4MoMBmBRs
-# 5qvApAvz4jaMV1+zWBY4KyIgMA0GCSqGSIb3DQEBCwUABIICABpaCORBb7iA/6bF
-# bwOP49Zujmu2EbJZMUN6e/2REG9vZZX+4yF8jJYlPu29sc+J2CekgPU/oqe87/h/
-# Ky7gWe96AbrzraG41o7uu1UqyOC3EoBsZbI3a2MALxR7Md5jKSXza2PpRQywcuhS
-# JuaSFY+t7++yCJb2Zif9V8mK5QriFoy400P8IoCq2I4YJmI2QOksdauFLmKswLdw
-# 8aTq6NVubOWZ64/deQGAvOIX87ucbj65DtAOYb/98KGw3Y1N0wBfkXofVSHlJmTN
-# 0ufZVt4AUzHhtCec/WTZTbIgrHVWcnpjgKHZMXuVcWamV0LloY61gmcEyOytnPjG
-# tqLYzCwoolkHM4OVVx6NKx0f05KCwb8VllsxU0pFmF57aKkmM7kHuOP1cN3PHoKD
-# 7oanarbk4xLlQjNHBLBaCOZRE1b9hVvxC6cnvRmkMpO2l9XNeTBJJO9j2KGn4wF7
-# AtU3lTSK5uUcws4mF+RBS2bWgPwLpDeSvBD7wFYyd6v/YwTFHcIAAd/ZY2/moMIe
-# vzMlWNR/6lpTyCF5M9LIvwP8D4orB5XGkPiXNi/nKEfXif01Od5wH1wLBbA2oHht
-# 2XMPLujFeO5IZOFg6KaNASrM/2ldX7Y9GigNl6VPCff9AWdrLA+rvLZef6jp9XOX
-# /bv87HO3EQ00dgKHAFYNnEbHSJGw
+# 5qvApAvz4jaMV1+zWBY4KyIgMA0GCSqGSIb3DQEBCwUABIICAN5kPRqPhZY4yvsC
+# 5rqIRDhj3KzZ1/Dh+78Wl2ymm66DoRYafYlGIDAyuebyLJl1N6umJJ3SttQ5u9k2
+# Q5XtiP4YXfzM0lNTla61OH9Hf9zuaEjGA56zyGD9q/hmqed7HXiGmQhEEBa2oKt3
+# dyaXYly4UBbTbeAwLy78pRPFCsRpvdLZlmJ6DPzuxZTLCIkYWnzPMWLfF+qY9a+g
+# FoeYbpM7aBPuc9mHC+V3e8HuFePdBT+SL/5768s5RFLRPGo6zFhPr0SvSPCrypC5
+# q8kxfieF5y/6fQO3JRtictJY/zShRgLe8P1O22BQSLFOtNedkA+crU+Eb4KvfEM4
+# 7qksK7OqbJyU5TdvHoWdxfHBRGWHoJgQL4aT/tWAZ4z3XIdUB5Sn1VNYHIWG/aJV
+# kFmxyyW1GW2ce58pSo6tMF8TEaO158YB1Ds4EdUsInroVnJQkA16F0EpK59X2iJU
+# ly2p18UtCGYqVF4EiykoeozaeHUu2GyybTBnmO+piPYyYZt9y8BntVCBGekARRED
+# NcALOmo0qRzRpLZtDPQyZRMMoslmFCAY0rDk7O1fg7erfHM+JdtBtnaSqOCfo3f8
+# aY66POef+DL01UW4EuE6tqQqvLghdC7Dyg7KNjJUgmHCkNT1XBdgYPYh2LesleY3
+# 0IuppVa10g6UEpkJB7DXWDq2T9gU
 # SIG # End signature block

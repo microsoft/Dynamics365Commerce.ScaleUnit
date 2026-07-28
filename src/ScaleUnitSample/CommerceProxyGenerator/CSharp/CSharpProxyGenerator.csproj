@@ -11,8 +11,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" Version="$(CommerceChannelPackagesVersion)" />
-        <PackageReference Include="Microsoft.Dynamics.Commerce.Proxy.ScaleUnit" Version="$(CommerceChannelPackagesVersion)" />
+        <PackageReference Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" />
+        <PackageReference Include="Microsoft.Dynamics.Commerce.Proxy.ScaleUnit" />
     </ItemGroup>
 
     <ItemGroup>
