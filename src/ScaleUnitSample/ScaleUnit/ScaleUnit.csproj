@@ -12,6 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.ScaleUnit" Version="$(CommerceSdkPackagesVersion)" />
+        <PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.ScaleUnit" />
     </ItemGroup>
 </Project>

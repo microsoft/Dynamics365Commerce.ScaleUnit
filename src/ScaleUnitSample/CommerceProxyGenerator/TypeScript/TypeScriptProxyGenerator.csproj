@@ -11,7 +11,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" Version="$(CommerceChannelPackagesVersion)" />
+        <PackageReference Include="Microsoft.Dynamics.Commerce.Tools.ExtensionsProxyGenerator.AspNetCore" />
     </ItemGroup>
 
     <ItemGroup>
@@ -20,7 +20,7 @@
 
     <!--Provide the path to the commerce runtime extension dll file.-->
     <ItemGroup>
-        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\net8.0\CommerceRuntime.dll" />
+        <RetailServerExtensionAssemblies Include="..\..\CommerceRuntime\bin\$(Configuration)\net10.0\CommerceRuntime.dll" />
     </ItemGroup>
 
     <!--If you wish to copy the generated files to a specific directory once project is built, set DestinationFolder property to the path you wish to have the files copied to.-->

@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Pos" Version="$(CommerceSdkPackagesVersion)" />
-    <PackageReference Include="Microsoft.TypeScript.MSBuild" Version="4.0.*" />
+    <PackageReference Include="Microsoft.Dynamics.Commerce.Sdk.Pos" />
+    <PackageReference Include="Microsoft.TypeScript.MSBuild" />
   </ItemGroup>
 
   <ItemGroup>

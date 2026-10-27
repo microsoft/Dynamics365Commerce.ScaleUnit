@@ -22,9 +22,9 @@ If you choose to develop by leveraging fully setup CSU locally with all actual c
 
 1. Clone https://github.com/microsoft/Dynamics365Commerce.ScaleUnit
 1. Install 64 bit version of VS Code for Windows from https://code.visualstudio.com/download
-1. Install *SDK 8.0* for Windows x64 from https://dotnet.microsoft.com/download/dotnet/8.0.
+1. Install *SDK 10.0* for Windows x64 from https://dotnet.microsoft.com/download/dotnet/10.0.
 1. Install *.NET Framework 4.7.2 Developer pack* from https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net472-developer-pack-offline-installer.
-1. Install the *Hosting Bundle* (click literally "Hosting Bundle" link, not "x64" nor "x86") for Windows from the [link](https://dotnet.microsoft.com/download/dotnet/8.0).
+1. Install the *Hosting Bundle* (click literally "Hosting Bundle" link, not "x64" nor "x86") for Windows from the [link](https://dotnet.microsoft.com/download/dotnet/10.0).
 1. Navigate to https://lcs.dynamics.com/V2/SharedAssetLibrary select the section *Retail Self-service package files* and then locate there the file ending with *Commerce Scale Unit (SEALED)*. Make sure to select there the version for the release you need, for instance 10.0.22, 10.0.23 and so on. Download the file and place it in the folder [Download](./Download)
 1. Launch the VS Code as Administrator and open src\ScaleUnitSample by leveraging the menu File->Open **Folder**.
    - If there is an error `"The window teminated unexpectedly (reason: 'launch-failed, code: '18'"` or any other preventing the VS Code from launching as Administrator, run the app specifying `--no-sandbox` or `--disable-gpu-sandbox` as outlined in [Issue 122951](https://github.com/microsoft/vscode/issues/122951).
@@ -158,7 +158,7 @@ This is a complete on-prem Scale Unit with all the components matching real prod
 At this time you have fully functional On-Prem deployed Scale Unit which includes:
 - Channel DB
 - Async Client
-- ASP.NET 8 based Retail Server capable of interacting with HQ via RTS
+- ASP.NET 10 based Retail Server capable of interacting with HQ via RTS
 - Cloud POS
 
 You can find URLs corresponding to just deployed CPOS and CSU if you review the Base Installer's log towards the end when CSU and CPOS are health-checked. In order to populate the Channel DB with data from HQ you will need to execute the step \#28 from [here](https://docs.microsoft.com/en-us/dynamics365/commerce/dev-itpro/retail-store-scale-unit-configuration-installation) assuming you have already performed previous steps described in that document.

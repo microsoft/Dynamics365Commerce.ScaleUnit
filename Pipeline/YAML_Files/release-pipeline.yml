@@ -1,0 +1,49 @@
+trigger: none
+pr: none
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  - group: Commerce-ScaleUnit-Extension-Release-Variables # Replace with your release variable group name if different
+  - name: scriptsPath
+    value: '$(Build.SourcesDirectory)/Pipeline/PowerShellScripts/DataverseClient'
+
+resources:
+  pipelines:
+    - pipeline: buildArtifact
+      source: 'Commerce-ScaleUnit-Extension-Build' # Replace with your artifact build pipeline name if different
+      trigger: none
+
+steps:
+  - download: buildArtifact
+    artifact: drop
+    displayName: 'Download CSU Extension Package'
+
+  - task: PowerShell@2
+    displayName: 'Upload CSU Extension Package to Dataverse'
+    inputs:
+      targetType: 'inline'
+      pwsh: true
+      script: |
+        $ErrorActionPreference = 'Stop'
+        
+        $packageFiles = Get-ChildItem -Path "$(Pipeline.Workspace)/buildArtifact/drop" -Filter "ScaleUnitPackage_*.zip" -File
+        
+        if (-not $packageFiles -or $packageFiles.Count -eq 0) {
+            throw "No package file found matching pattern 'ScaleUnitPackage_*.zip'."
+        }
+        
+        if ($packageFiles.Count -gt 1) {
+            throw "Multiple package files found matching pattern 'ScaleUnitPackage_*.zip'. Please ensure exactly one package exists in the drop folder."
+        }
+        
+        $packageFile = $packageFiles[0]
+        
+        & $(scriptsPath)/UploadExtensionPackage.ps1 `
+            -PackageFilePath $packageFile.FullName `
+            -EnvironmentUrl $(DataverseUrl) `
+            -TenantId $(TenantId) `
+            -ClientId $(ClientId) `
+            -ClientSecret $(ClientSecret) `
+            -ValidationStatus 'Valid'

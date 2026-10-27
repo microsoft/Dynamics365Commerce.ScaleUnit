@@ -1,0 +1,101 @@
+schemaVersion: 1.0.0
+providers:
+  - provider: InventoryAsCode
+    version: 1.0.0
+    metadata:
+      isProduction: true
+      accountableOwners:
+        service: e61713e1-3ecf-42af-ab37-9111c5413102
+      routing:
+        defaultAreaPath:
+          org: msdyneng
+          path: FinOps\Retail and Services\CSU Framework
+
+  - provider: Ownership/CodeReviewers
+    version: 1.0.0
+    metadata:
+      options:
+        allowInheritance: true
+      reviewers:
+
+        # Default branch policies (refs/heads/main)
+
+        # Policy 101076: BAG IE intl PR approvers
+        - branches: '[Ref] refs/heads/main'
+          scope: |
+            [Glob] **/*.lcl;
+            **/*.lss;
+            **/*.lci;
+            **/*.resx
+          notifyOnly: [BAGintlPR]
+
+        # Policy 101076: BAG IE intl PR approvers (POS resjson)
+        - branches: '[Ref] refs/heads/main'
+          scope: '[Glob] /src/ScaleUnitSample/POS/**/*.resjson'
+          notifyOnly: [BAGintlPR]
+
+        # Policy 55897: D365 Commerce Core CR Engineering Systems
+        - branches: '[Ref] refs/heads/main'
+          scope: |
+            [Glob] /nuget.config;
+            /repo.props
+          required: [d365cccres]
+
+        # Policy 55870: D365 Commerce Core CR Channel
+        - branches: '[Ref] refs/heads/main'
+          scope: |
+            [Glob] **/*;
+            !/src/ScaleUnitSample/POS/**;
+            !**/*.lcl;
+            !**/*.lss;
+            !**/*.lci;
+            !**/*.resx
+          required: [d365cccrchananddata]
+
+        # Policy 56134: D365 Commerce CR Store Commerce Framework
+        - branches: '[Ref] refs/heads/main'
+          scope: |
+            [Glob] /src/ScaleUnitSample/POS/**;
+            !**/*.lcl;
+            !**/*.lss;
+            !**/*.lci;
+            !**/*.resx;
+            !**/*.resjson
+          required: [D365CCRSCF]
+
+        # Release branch policies (refs/heads/release/*)
+
+        # Policy 94604: BAG IE intl PR approvers
+        - branches: '[Prefix] release/'
+          scope: |
+            [Glob] **/*.lcl;
+            **/*.lss;
+            **/*.lci;
+            **/*.resx
+          notifyOnly: [BAGintlPR]
+
+        # Policy 94604: BAG IE intl PR approvers (POS resjson)
+        - branches: '[Prefix] release/'
+          scope: '[Glob] /src/ScaleUnitSample/POS/**/*.resjson'
+          notifyOnly: [BAGintlPR]
+
+        # Policy 87697: D365 Commerce Core Shiproom Approvers
+        - branches: '[Prefix] release/'
+          scope: |
+            [Glob] **/*;
+            !/src/ScaleUnitSample/POS/**/*.resjson;
+            !**/*.lcl;
+            !**/*.lss;
+            !**/*.lci;
+            !**/*.resx
+          required: [d365ccshiproomapprov]
+
+        # Policy 87698: D365 Commerce Release PR Approvers
+        - branches: '[Prefix] release/'
+          scope: |
+            [Glob] **/*;
+            !**/*.lcl;
+            !**/*.lss;
+            !**/*.lci;
+            !**/*.resx
+          required: [d365cprapprovers]
